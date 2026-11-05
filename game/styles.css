@@ -39,6 +39,10 @@
   flex-direction: column;
 }
 
+#view-game.hidden {
+  display: none !important;
+}
+
 body.portal-game-active {
   overflow: hidden !important;
 }
