@@ -37,6 +37,12 @@
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Firebase JS SDK (App, Firestore, Auth, Storage) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
   <!-- Mammoth.js för förhandsgranskning av Word (.docx) direkt i webbläsaren -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
@@ -1593,6 +1599,35 @@
       } else {
         input.type = 'password';
         icon.className = 'fa-solid fa-eye text-xs';
+      }
+    }
+
+    // ==================== FIREBASE KONFIGURATION & INIT ====================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBhcuUsGDhkDVPYfDYm5DV00-mI7NcyJXo",
+      authDomain: "digitala-portalen.firebaseapp.com",
+      projectId: "digitala-portalen",
+      storageBucket: "digitala-portalen.firebasestorage.app",
+      messagingSenderId: "142125913189",
+      appId: "1:142125913189:web:ba54c322cce63bc2d5228c"
+    };
+
+    let firebaseApp = null;
+    let firebaseDb = null;
+    let firebaseAuth = null;
+    let firebaseStorage = null;
+
+    function initFirebase() {
+      try {
+        if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+          firebaseApp = firebase.initializeApp(firebaseConfig);
+          if (firebase.firestore) firebaseDb = firebase.firestore();
+          if (firebase.auth) firebaseAuth = firebase.auth();
+          if (firebase.storage) firebaseStorage = firebase.storage();
+          console.log('Firebase initierad framgångsrikt:', firebaseConfig.projectId);
+        }
+      } catch (err) {
+        console.warn('Firebase initieringsvarning:', err);
       }
     }
 
@@ -6528,6 +6563,7 @@
 
     // ==================== INITIALISERING ====================
     window.addEventListener('DOMContentLoaded', async () => {
+      initFirebase();
       checkPortalAuth();
       enforceDefaultDarkMode();
       initSwedish24hPicker();
