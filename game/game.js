@@ -703,11 +703,11 @@
     }
 
     if (rows.length === 2) {
-      document.documentElement.style.setProperty('--unit-height', window.innerWidth < 760 ? '34px' : '42px');
-      document.documentElement.style.setProperty('--tube-width', window.innerWidth < 760 ? '50px' : '62px');
+      document.documentElement.style.setProperty('--unit-height', window.innerWidth < 760 ? '28px' : '35px');
+      document.documentElement.style.setProperty('--tube-width', window.innerWidth < 760 ? '42px' : '50px');
     } else {
-      document.documentElement.style.setProperty('--unit-height', window.innerWidth < 760 ? '42px' : '52px');
-      document.documentElement.style.setProperty('--tube-width', window.innerWidth < 760 ? '58px' : '72px');
+      document.documentElement.style.setProperty('--unit-height', window.innerWidth < 760 ? '36px' : '42px');
+      document.documentElement.style.setProperty('--tube-width', window.innerWidth < 760 ? '48px' : '58px');
     }
 
     rows.forEach((rowItems) => {

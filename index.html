@@ -977,7 +977,8 @@
 
     <!-- ==================== VY: SPEL (KEMI-LABBET VÄTSKE-PUZZLE) ==================== -->
     <section id="view-game" class="hidden">
-﻿  <canvas id="confetti-canvas"></canvas>
+<!-- Clean canvas for victory confetti only (no background bubbles) -->
+  <canvas id="confetti-canvas"></canvas>
   <div id="pour-stream" class="pour-stream"></div>
 
   <!-- ================= START SCREEN: KEMI-LABBET ================= -->
@@ -990,17 +991,17 @@
     <div class="start-content lab-content">
 
       <!-- Professor Kemis Kloka Tanke-Ruta / Speech Bubble -->
-      <div id="baltazar-wisdom-box" class="wisdom-container" style="cursor: pointer;" title="Klicka fÃ¶r ett nytt klokt citat!">
+      <div id="baltazar-wisdom-box" class="wisdom-container" style="cursor: pointer;" title="Klicka för ett nytt klokt citat!">
         <div id="baltazar-speech" class="speech-bubble">
-          â€Inga problem Ã¤r fÃ¶r svÃ¥ra â€“ med rÃ¤tt kemi faller alla bitar pÃ¥ plats.â€ ðŸ’¡
+          ”Inga problem är för svåra – med rätt kemi faller alla bitar på plats.” 💡
         </div>
       </div>
 
       <!-- Interactive Animated Scene: Professor Kemi & Distillation Machine -->
       <div class="lab-interactive-stage">
         <!-- Professor Kemi Cartoon Character -->
-        <div id="baltazar-character-wrap" class="character-wrap" title="Klicka pÃ¥ Professor Kemi fÃ¶r ett klokt ord!">
-          <div id="baltazar-aha-bulb" class="character-bulb">ðŸ’¡ AHA!</div>
+        <div id="baltazar-character-wrap" class="character-wrap" title="Klicka på Professor Kemi för ett klokt ord!">
+          <div id="baltazar-aha-bulb" class="character-bulb">💡 AHA!</div>
 
           <!-- SVG Cartoon Illustration of Professor Kemi (Indian Scientist Look) -->
           <svg class="character-svg" viewBox="0 0 160 220">
@@ -1050,7 +1051,7 @@
             <path d="M 59 55 Q 68 52 77 56" fill="none" stroke="#1c1917" stroke-width="3" stroke-linecap="round" />
             <path d="M 83 56 Q 92 52 101 55" fill="none" stroke="#1c1917" stroke-width="3" stroke-linecap="round" />
 
-            <!-- Distinct Prominent Professor Glasses (Tydliga GlasÃ¶gon) -->
+            <!-- Distinct Prominent Professor Glasses (Tydliga Glasögon) -->
             <!-- Temple arms connecting glasses to ears -->
             <line x1="57" y1="71" x2="51" y2="73" stroke="#0f172a" stroke-width="3.2" stroke-linecap="round" />
             <line x1="103" y1="71" x2="109" y2="73" stroke="#0f172a" stroke-width="3.2" stroke-linecap="round" />
@@ -1136,7 +1137,7 @@
             <line x1="145" y1="38" x2="152" y2="32" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" class="gauge-needle" />
 
             <!-- The Polished Machine Lever -->
-            <g id="baltazar-lever-btn" class="machine-lever" title="Klicka fÃ¶r att dra i spaken!">
+            <g id="baltazar-lever-btn" class="machine-lever" title="Klicka för att dra i spaken!">
               <rect x="18" y="90" width="8" height="45" rx="3" fill="#94a3b8" stroke="#475569" stroke-width="1.5" />
               <circle cx="22" cy="85" r="11" fill="#ef4444" stroke="#b91c1c" stroke-width="2" />
               <circle cx="20" cy="82" r="3.5" fill="#ffffff" />
@@ -1144,7 +1145,7 @@
           </svg>
 
           <button id="pull-lever-btn" class="btn-pull-lever">
-            <span>ðŸ§ª</span>
+            <span>🧪</span>
             <span>DRA I SPAKEN!</span>
           </button>
         </div>
@@ -1152,7 +1153,7 @@
 
       <!-- Play Theme Song Button -->
       <button id="baltazar-song-btn" class="music-pill-btn" title="DHR-Melodin">
-        <span>ðŸŽµ</span>
+        <span>🎵</span>
         <span id="baltazar-music-text">DHR-MELODIN</span>
       </button>
 
@@ -1160,7 +1161,7 @@
       <div class="player-pass-card">
         <div class="pass-header">
           <div class="pass-rank-tag">
-            <span>ðŸŽ–ï¸</span>
+            <span>🎖️</span>
             <span id="start-rank-title">Labb-Assistent</span>
           </div>
           <div id="start-level-badge" class="pass-level-tag">Bana 1 av 120</div>
@@ -1168,12 +1169,12 @@
 
         <div class="pass-stats-strip">
           <div class="pass-stat-item">
-            <div id="start-stars-val" class="stat-num">â­ 0</div>
-            <div id="start-stars-lbl" class="stat-lbl">StjÃ¤rnor</div>
+            <div id="start-stars-val" class="stat-num">⭐ 0</div>
+            <div id="start-stars-lbl" class="stat-lbl">Stjärnor</div>
           </div>
           <div class="pass-stat-item">
-            <div id="start-cleared-val" class="stat-num">ðŸ† 0</div>
-            <div id="start-cleared-lbl" class="stat-lbl">LÃ¶sta Pussel</div>
+            <div id="start-cleared-val" class="stat-num">🏆 0</div>
+            <div id="start-cleared-lbl" class="stat-lbl">Lösta Pussel</div>
           </div>
           <div class="pass-stat-item">
             <div id="start-percent-val" class="stat-num">0%</div>
@@ -1188,23 +1189,23 @@
 
       <!-- Start Action Buttons -->
       <div class="start-actions">
-        <button id="start-play-btn" class="btn-hero-play" title="Klicka fÃ¶r att spela!">
-          <span class="play-icon-badge">â–¶</span>
+        <button id="start-play-btn" class="btn-hero-play" title="Klicka för att spela!">
+          <span class="play-icon-badge">▶</span>
           <span id="start-play-label">Starta</span>
         </button>
 
         <div class="start-secondary-grid">
           <button id="start-levels-btn" class="btn-start-action">
-            <span>ðŸ—ºï¸</span>
+            <span>🗺️</span>
             <span id="start-levels-text">Level</span>
           </button>
           <button id="start-help-btn" class="btn-start-action">
-            <span>â“</span>
+            <span>❓</span>
             <span id="start-help-text">HUR FUNGERAR SPELET</span>
           </button>
           <button id="start-settings-btn" class="btn-start-action">
-            <span>âš™ï¸</span>
-            <span id="start-settings-text">InstÃ¤llningar</span>
+            <span>⚙️</span>
+            <span id="start-settings-text">Inställningar</span>
           </button>
         </div>
       </div>
@@ -1225,7 +1226,7 @@
         </button>
 
         <!-- Settings Button (Gear) -->
-        <button id="settings-btn" class="btn-3d btn-settings" title="InstÃ¤llningar / Settings" aria-label="Settings">
+        <button id="settings-btn" class="btn-3d btn-settings" title="Inställningar / Settings" aria-label="Settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -1242,7 +1243,7 @@
         </button>
 
         <!-- Add Extra Helper Tube Button ([+]) -->
-        <button id="add-tube-btn" class="btn-3d btn-add-tube" title="LÃ¤gg till extra provrÃ¶r / Add helper tube" aria-label="Add Extra Tube">
+        <button id="add-tube-btn" class="btn-3d btn-add-tube" title="Lägg till extra provrör / Add helper tube" aria-label="Add Extra Tube">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect>
             <line x1="12" y1="8" x2="12" y2="16"></line>
@@ -1254,11 +1255,11 @@
 
       <!-- Center Moves & Level Pill (Sleek Modern Banner) -->
       <div class="status-banner">
-        <button id="prev-level-btn" class="nav-arrow-btn" title="FÃ¶regÃ¥ende bana" aria-label="Previous Level">
-          â—€
+        <button id="prev-level-btn" class="nav-arrow-btn" title="Föregående bana" aria-label="Previous Level">
+          ◀
         </button>
 
-        <div id="banner-open-map" class="banner-metrics" title="Klicka fÃ¶r att vÃ¤lja bana (1â€“120)">
+        <div id="banner-open-map" class="banner-metrics" title="Klicka för att välja bana (1–120)">
           <div class="metric-block">
             <span id="level-label" class="metric-label">BANA</span>
             <span id="level-value" class="metric-value">1</span>
@@ -1271,17 +1272,17 @@
             <span id="moves-value" class="metric-value">0</span>
           </div>
 
-          <span id="difficulty-pill" class="difficulty-pill">NybÃ¶rjare</span>
+          <span id="difficulty-pill" class="difficulty-pill">Nybörjare</span>
         </div>
 
-        <button id="next-level-btn" class="nav-arrow-btn" title="NÃ¤sta bana" aria-label="Next Level">
-          â–¶
+        <button id="next-level-btn" class="nav-arrow-btn" title="Nästa bana" aria-label="Next Level">
+          ▶
         </button>
       </div>
 
       <div class="top-group">
         <!-- Restart Button -->
-        <button id="restart-btn" class="btn-3d btn-restart" title="BÃ¶rja om banan / Restart" aria-label="Restart">
+        <button id="restart-btn" class="btn-3d btn-restart" title="Börja om banan / Restart" aria-label="Restart">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12a9 9 0 1 1-3-6.7"></path>
             <polyline points="21 3 21 9 15 9"></polyline>
@@ -1289,7 +1290,7 @@
         </button>
 
         <!-- Undo Button -->
-        <button id="undo-btn" class="btn-3d btn-undo" title="Ã…ngra drag / Undo" aria-label="Undo">
+        <button id="undo-btn" class="btn-3d btn-undo" title="Ångra drag / Undo" aria-label="Undo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 14 4 9 9 4"></polyline>
             <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
@@ -1297,7 +1298,7 @@
         </button>
 
         <!-- Level Map / Worlds Button -->
-        <button id="levels-btn" class="btn-3d btn-levels" title="Alla banor (1â€“120)" aria-label="All Levels">
+        <button id="levels-btn" class="btn-3d btn-levels" title="Alla banor (1–120)" aria-label="All Levels">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
             <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
@@ -1310,8 +1311,8 @@
 
     <!-- Chapter & Par Info Subbar -->
     <div class="chapter-bar">
-      <span id="chapter-info-text" class="chapter-badge">NybÃ¶rjare â€¢ Bana 1/120</span>
-      <span id="par-info-text" class="par-indicator">MÃ¥l: 7 drag</span>
+      <span id="chapter-info-text" class="chapter-badge">Nybörjare • Bana 1/120</span>
+      <span id="par-info-text" class="par-indicator">Mål: 7 drag</span>
     </div>
 
     <!-- MAIN PUZZLE STAGE (Clean & Crisp 8-Bit Arcade Glass Tubes) -->
@@ -1320,23 +1321,23 @@
     <!-- BOTTOM QUICK NAVIGATION & HINT BAR -->
     <footer class="bottom-bar">
       <button id="footer-prev-btn" class="pill-action-btn">
-        <span>â—€</span>
-        <span id="footer-prev-text">FÃ¶regÃ¥ende bana</span>
+        <span>◀</span>
+        <span id="footer-prev-text">Föregående bana</span>
       </button>
 
       <button id="footer-map-btn" class="pill-action-btn">
-        <span>ðŸ—ºï¸</span>
-        <span id="footer-map-text">Banor & VÃ¤rldar</span>
+        <span>🗺️</span>
+        <span id="footer-map-text">Banor & Världar</span>
       </button>
 
       <button id="footer-hint-btn" class="pill-action-btn">
-        <span>ðŸ’¡</span>
-        <span id="footer-hint-text">LedtrÃ¥d</span>
+        <span>💡</span>
+        <span id="footer-hint-text">Ledtråd</span>
       </button>
 
       <button id="footer-next-btn" class="pill-action-btn">
-        <span id="footer-next-text">NÃ¤sta bana</span>
-        <span>â–¶</span>
+        <span id="footer-next-text">Nästa bana</span>
+        <span>▶</span>
       </button>
     </footer>
   </div>
@@ -1346,15 +1347,15 @@
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title">
-          <span>ðŸ§ª</span>
+          <span>🧪</span>
           <span id="how-to-play-title">HUR FUNGERAR SPELET</span>
         </div>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">âœ•</button>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="info-row-card">
-          <div class="icon-tile tile-yellow">ðŸŽ¯</div>
+          <div class="icon-tile tile-yellow">🎯</div>
           <div class="info-text">
             <h4 id="goal-title">THE GOAL</h4>
             <p id="goal-desc">Sort all colors so each tube contains only one solid color.</p>
@@ -1362,7 +1363,7 @@
         </div>
 
         <div class="info-row-card">
-          <div class="icon-tile tile-cyan">ðŸ‘†</div>
+          <div class="icon-tile tile-cyan">👆</div>
           <div class="info-text">
             <h4 id="pour-title">HOW TO POUR</h4>
             <p id="pour-desc">Tap a tube to select it, then tap another tube to pour.</p>
@@ -1370,7 +1371,7 @@
         </div>
 
         <div class="info-row-card">
-          <div class="icon-tile tile-red">âš ï¸</div>
+          <div class="icon-tile tile-red">⚠️</div>
           <div class="info-text">
             <h4 id="rules-title">THE RULES</h4>
             <p id="rules-desc">Pour onto the same color only. Target must have enough space.</p>
@@ -1378,10 +1379,10 @@
         </div>
 
         <div class="info-row-card">
-          <div class="icon-tile tile-purple">âœ¨</div>
+          <div class="icon-tile tile-purple">✨</div>
           <div class="info-text">
             <h4 id="special-title">SPECIALFUNKTIONER I SPELET</h4>
-            <p id="special-desc">LÃ¤ngre in i spelet mÃ¶ter du korta provrÃ¶r, hemliga lager (?) och upp till 12 kemiska fÃ¤rger! AnvÃ¤nd [+]-knappen om du behÃ¶ver ett extra hjÃ¤lprÃ¶r.</p>
+            <p id="special-desc">Längre in i spelet möter du korta provrör, hemliga lager (?) och upp till 12 kemiska färger! Använd [+]-knappen om du behöver ett extra hjälprör.</p>
           </div>
         </div>
       </div>
@@ -1393,17 +1394,17 @@
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title">
-          <span>âš™ï¸</span>
+          <span>⚙️</span>
           <span id="settings-title">SETTINGS</span>
         </div>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">âœ•</button>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
       </div>
 
       <div class="modal-body">
         <!-- Sound On/Off -->
         <div class="info-row-card space-between">
           <div class="setting-left">
-            <div class="icon-tile tile-orange">ðŸ”Š</div>
+            <div class="icon-tile tile-orange">🔊</div>
             <span id="sound-setting-label" class="setting-title">Sound</span>
           </div>
           <button id="sound-toggle" class="switch-toggle active" aria-label="Toggle Sound">
@@ -1423,7 +1424,7 @@
         <!-- Colorblind Mode -->
         <div class="info-row-card space-between">
           <div class="setting-left">
-            <div class="icon-tile tile-teal">ðŸ‘ï¸</div>
+            <div class="icon-tile tile-teal">👁️</div>
             <span id="colorblind-setting-label" class="setting-title">Colorblind Mode</span>
           </div>
           <button id="colorblind-toggle" class="switch-toggle" aria-label="Toggle Colorblind Mode">
@@ -1434,8 +1435,8 @@
         <!-- Unlock all levels switch -->
         <div class="info-row-card space-between">
           <div class="setting-left">
-            <div class="icon-tile tile-purple">ðŸ”“</div>
-            <span id="unlock-all-label" class="setting-title">LÃ¥s upp alla 120 banor direkt</span>
+            <div class="icon-tile tile-purple">🔓</div>
+            <span id="unlock-all-label" class="setting-title">Lås upp alla 120 banor direkt</span>
           </div>
           <button id="unlock-all-toggle" class="switch-toggle" aria-label="Unlock All Levels">
             <div class="switch-knob"></div>
@@ -1444,34 +1445,34 @@
 
         <!-- Language Selector (Svenska / English) -->
         <div class="info-row-card column-card">
-          <span class="section-caption">SPRÃ…K / LANGUAGE</span>
+          <span class="section-caption">SPRÅK / LANGUAGE</span>
           <div class="segmented-group">
-            <button id="lang-sv-btn" class="segment-btn active">ðŸ‡¸ðŸ‡ª Svenska</button>
-            <button id="lang-en-btn" class="segment-btn">ðŸ‡¬ðŸ‡§ English</button>
+            <button id="lang-sv-btn" class="segment-btn active">🇸🇪 Svenska</button>
+            <button id="lang-en-btn" class="segment-btn">🇬🇧 English</button>
           </div>
         </div>
 
         <button id="reset-progress-btn" class="btn-secondary-large" style="width: 100%; margin-top: 4px;">
-          Ã…terstÃ¤ll sparade framsteg
+          Återställ sparade framsteg
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ================= MODAL 3: LEVEL SELECT MAP (120 Banor & 6 SvÃ¥righetsgrader) ================= -->
+  <!-- ================= MODAL 3: LEVEL SELECT MAP (120 Banor & 6 Svårighetsgrader) ================= -->
   <div id="levels-modal" class="modal-overlay">
     <div class="modal-card modal-wide">
       <div class="modal-header">
         <div>
           <div class="modal-title">
-            <span>ðŸ—ºï¸</span>
-            <span id="level-map-title">VÃ„LJ BANA</span>
+            <span>🗺️</span>
+            <span id="level-map-title">VÄLJ BANA</span>
           </div>
           <p id="level-map-subtitle" style="font-size: 13px; color: #9a9aa6; margin-top: 4px;">
-            Hoppa fritt tillbaka till tidigare banor eller fortsÃ¤tt din resa!
+            Hoppa fritt tillbaka till tidigare banor eller fortsätt din resa!
           </p>
         </div>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">âœ•</button>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
       </div>
 
       <div class="modal-body">
@@ -1486,14 +1487,14 @@
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title">
-          <span>ðŸ†</span>
+          <span>🏆</span>
           <span id="win-modal-title">BANA AVKLARAD!</span>
         </div>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">âœ•</button>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
       </div>
 
       <div class="modal-body">
-        <div id="win-stars-display" class="win-banner-stars">â­â­â­</div>
+        <div id="win-stars-display" class="win-banner-stars">⭐⭐⭐</div>
 
         <div class="win-stats-grid">
           <div class="win-stat-box">
@@ -1501,25 +1502,23 @@
             <div id="win-moves-val" class="val">7</div>
           </div>
           <div class="win-stat-box">
-            <div id="win-par-label" class="label">3-stjÃ¤rnigt mÃ¥l</div>
+            <div id="win-par-label" class="label">3-stjärnigt mål</div>
             <div id="win-par-val" class="val">7</div>
           </div>
           <div class="win-stat-box">
-            <div id="win-best-label" class="label">BÃ¤sta resultat</div>
+            <div id="win-best-label" class="label">Bästa resultat</div>
             <div id="win-best-val" class="val">7</div>
           </div>
         </div>
 
         <div class="win-actions">
-          <button id="win-replay-btn" class="btn-secondary-large">Spela igen â†»</button>
-          <button id="win-map-btn" class="btn-secondary-large">Alla Banor ðŸ—ºï¸</button>
-          <button id="win-next-btn" class="btn-primary-large">NÃ¤sta Bana â–¶</button>
+          <button id="win-replay-btn" class="btn-secondary-large">Spela igen ↻</button>
+          <button id="win-map-btn" class="btn-secondary-large">Alla Banor 🗺️</button>
+          <button id="win-next-btn" class="btn-primary-large">Nästa Bana ▶</button>
         </div>
       </div>
     </div>
   </div>
-
-
     </section>
 
   </main>
@@ -2462,6 +2461,12 @@
 
     // ==================== FLIKNAVIGERING ====================
     function switchTab(tab) {
+      if (tab === 'game') {
+        document.body.classList.add('portal-game-active');
+      } else {
+        document.body.classList.remove('portal-game-active');
+      }
+
       ['links', 'guides', 'notes', 'inventory', 'rekondCount', 'licensslut', 'game'].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const btn = document.getElementById(`tab-${t}`);
