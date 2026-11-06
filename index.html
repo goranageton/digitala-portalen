@@ -6229,7 +6229,11 @@
       tbody.innerHTML = state.inventory.spareParts.map((sp, idx) => `
         <tr class="bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
           <td class="py-1.5 px-2.5">
-            <div class="font-extrabold text-xs sm:text-sm font-mono text-slate-900 dark:text-white leading-tight">${sp.artnr || '—'}</div>
+            <div class="mb-0.5">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-brand-600 text-white font-mono font-extrabold text-xs shadow-sm">
+                ${sp.artnr || '—'}
+              </span>
+            </div>
             <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${sp.name || 'Reservdel'}</div>
           </td>
           <td class="py-1.5 px-2">
