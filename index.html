@@ -3279,9 +3279,6 @@
       if (!Array.isArray(state.inventory.rekondCount)) {
         state.inventory.rekondCount = [];
       }
-      if (Array.isArray(state.inventory.rekondCount) && state.inventory.rekondCount.some(x => x && x.date === '2026-10-30' && x.artikel === '81549' && x.count === 20)) {
-        state.inventory.rekondCount = [];
-      }
       if (!state.inventory.licensslut || typeof state.inventory.licensslut !== 'object') {
         state.inventory.licensslut = JSON.parse(JSON.stringify(defaultState.inventory.licensslut));
       } else {
@@ -3290,15 +3287,6 @@
         }
         if (!Array.isArray(state.inventory.licensslut.automaterData)) {
           state.inventory.licensslut.automaterData = [];
-        }
-        // Rensa automatiskt bort eventuella gamla demo-rader från tidigare session
-        if (state.inventory.licensslut.masterData.some(x => x && x.serienr === 'PP020595' && x.individnr === '2248004')) {
-          state.inventory.licensslut.masterData = [];
-          state.inventory.licensslut.file1Name = 'Ingen fil inläst';
-        }
-        if (state.inventory.licensslut.automaterData.some(x => x && x.serienr === 'PP020595' && x.individnr === '2248004')) {
-          state.inventory.licensslut.automaterData = [];
-          state.inventory.licensslut.file2Name = 'Ingen fil inläst';
         }
         if (!state.inventory.licensslut.file1Name || state.inventory.licensslut.file1Name.includes('Förladdad')) {
           state.inventory.licensslut.file1Name = 'Ingen fil inläst';
