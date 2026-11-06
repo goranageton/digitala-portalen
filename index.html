@@ -5984,75 +5984,20 @@
       if (modal) modal.classList.add('hidden');
     }
 
-    const RELATED_ACCESSORY_CATEGORIES = {
-      'Omron M7': ['Omron M7', 'Omron M7 / A&D 656', 'Gemensam', 'Allmän / Förbrukning', 'Emballage'],
-      'A&D 656': ['A&D 656', 'Omron M7 / A&D 656', 'Gemensam', 'Allmän / Förbrukning', 'Emballage'],
-      'NattUgla Enkel': ['NattUgla Enkel', 'NattUgla', 'Emballage'],
-      'NattUgla Avancerad': ['NattUgla Avancerad', 'NattUgla', 'Emballage'],
-      'Pico Pro': ['Pico Pro', 'Pico Pro / Nano', 'Småenheter / Larm', 'Emballage'],
-      'Nano 4G': ['Nano 4G', 'Pico Pro / Nano', 'Småenheter / Larm', 'Emballage'],
-      'Active': ['Active', 'Posifon Active / Tillbehör', 'Småenheter / Larm', 'Emballage'],
-      'Active Gen 2': ['Active Gen 2', 'Active', 'Posifon Active / Tillbehör', 'Småenheter / Larm', 'Emballage'],
-      'MS6110BT': ['MS6110BT', 'Gemensam', 'Allmän / Förbrukning', 'Emballage'],
-      'Evondos E300': ['Evondos E300', 'Evondos E300/Anna', 'Evondos', 'Emballage'],
-      'Evondos Anna': ['Evondos Anna', 'Evondos E300/Anna', 'Evondos', 'Emballage'],
-      'Dosell 3.0': ['Dosell 3.0', 'Dosell', 'Gemensam', 'Allmän / Förbrukning', 'Emballage']
-    };
-
-    function doesItemBelongToHuvudartikel(item, mainCat) {
-      const itemKat = (item.kategori || '').trim();
-      const isHuvud = (item.typ || '').trim().toLowerCase() === 'huvudartikel';
-      if (isHuvud) {
-        return itemKat === mainCat;
-      }
-      if (itemKat === mainCat) return true;
-      const related = RELATED_ACCESSORY_CATEGORIES[mainCat];
-      if (related && related.includes(itemKat)) return true;
-      if (itemKat && mainCat.toLowerCase().startsWith(itemKat.toLowerCase() + ' ')) return true;
-      return false;
-    }
-
-    function countAccessoriesForHuvudartikel(mainCat) {
-      ensureInventoryStruct();
-      const catalog = state.inventory.accessoriesCatalog || DEFAULT_ACCESSORIES_CATALOG;
-      return catalog.filter(item => {
-        const isHuvud = (item.typ || '').trim().toLowerCase() === 'huvudartikel';
-        return !isHuvud && doesItemBelongToHuvudartikel(item, mainCat);
-      }).length;
-    }
-
-    function toggleHuvudartikelFilter(mainCat) {
-      const select = document.getElementById('acc-category-filter');
-      if (!select) return;
-      if (select.value === mainCat) {
-        select.value = 'all';
-      } else {
-        select.value = mainCat;
-      }
-      renderAccessoriesCatalog();
-    }
-
     function populateAccessoriesCategories() {
       const select = document.getElementById('acc-category-filter');
       if (!select) return;
       ensureInventoryStruct();
-      const currentVal = select.value || 'all';
       const catSet = new Set();
       (state.inventory.accessoriesCatalog || DEFAULT_ACCESSORIES_CATALOG).forEach(item => {
-        const isHuvud = (item.typ || '').trim().toLowerCase() === 'huvudartikel';
-        if (isHuvud && item.kategori && item.kategori.trim()) {
-          catSet.add(item.kategori.trim());
-        }
+        if (item.kategori && item.kategori.trim()) catSet.add(item.kategori.trim());
       });
       const sorted = Array.from(catSet).sort((a, b) => a.localeCompare(b, 'sv'));
-      let html = '<option value="all">Alla kategorier (endast huvudartiklar)</option>';
+      let html = '<option value="all">Alla kategorier</option>';
       sorted.forEach(c => {
         html += `<option value="${c.replace(/"/g, '&quot;')}">${c}</option>`;
       });
       select.innerHTML = html;
-      if (currentVal !== 'all' && catSet.has(currentVal)) {
-        select.value = currentVal;
-      }
     }
 
     function toggleAccessoryCheck(artnr, forceChecked) {
@@ -6126,14 +6071,8 @@
       const cat = document.getElementById('acc-category-filter')?.value || 'all';
       const typ = document.getElementById('acc-type-filter')?.value || 'all';
 
-      const filtered = catalog.filter(item => {
-        const isHuvud = (item.typ || '').trim().toLowerCase() === 'huvudartikel';
-        if (cat === 'all') {
-          // I "Alla kategorier" (utan sökning/typfilter) visas endast huvudartiklar tills man aktiverar en huvudartikel
-          if (!q && typ === 'all' && !isHuvud) return false;
-        } else {
-          if (!doesItemBelongToHuvudartikel(item, cat)) return false;
-        }
+      return catalog.filter(item => {
+        if (cat !== 'all' && (item.kategori || '') !== cat) return false;
         if (typ !== 'all' && (item.typ || '') !== typ) return false;
         if (q) {
           const match = (item.artnr || '').toLowerCase().includes(q) ||
@@ -6145,15 +6084,6 @@
         }
         return true;
       });
-
-      if (cat !== 'all') {
-        filtered.sort((a, b) => {
-          const aH = (a.typ || '').trim().toLowerCase() === 'huvudartikel' ? 0 : 1;
-          const bH = (b.typ || '').trim().toLowerCase() === 'huvudartikel' ? 0 : 1;
-          return aH - bH;
-        });
-      }
-      return filtered;
     }
 
     function renderAccessoriesCatalog() {
@@ -6161,7 +6091,6 @@
       if (!tbody) return;
 
       const items = getFilteredAccessories();
-      const activeCat = document.getElementById('acc-category-filter')?.value || 'all';
       const countDisplay = document.getElementById('acc-catalog-count');
       if (countDisplay) countDisplay.textContent = `${items.length} artiklar`;
 
@@ -6177,38 +6106,30 @@
         return;
       }
 
-      tbody.innerHTML = items.map(item => {
+            tbody.innerHTML = items.map(item => {
         const isChecked = Boolean(selectedAccessories[item.artnr]?.checked);
         const qty = selectedAccessories[item.artnr]?.count || 1;
         const safeArtnr = String(item.artnr || '').replace(/'/g, "\\'");
-        const safeKat = String(item.kategori || '').trim().replace(/'/g, "\\'");
+        const safeName = String(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const isHuvud = (item.typ || '').trim().toLowerCase() === 'huvudartikel';
-        const accCount = isHuvud ? countAccessoriesForHuvudartikel((item.kategori || '').trim()) : 0;
-        const isActiveHuvud = isHuvud && activeCat === (item.kategori || '').trim();
 
         return `
-          <tr class="${isHuvud ? 'bg-purple-500/10 hover:bg-purple-500/20 dark:bg-purple-950/30 dark:hover:bg-purple-900/40 border-b border-purple-300/40 dark:border-purple-800/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800'} transition text-xs">
+          <tr class="${isHuvud ? 'bg-purple-500/10 hover:bg-purple-500/15 dark:bg-purple-950/25 dark:hover:bg-purple-900/35 border-b border-purple-300/40 dark:border-purple-800/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800'} transition text-xs">
             <td class="py-2.5 px-3 text-center">
               <input type="checkbox" id="acc_chk_${item.artnr}" onchange="toggleAccessoryCheck('${safeArtnr}', this.checked)" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded ${isHuvud ? 'text-purple-600 focus:ring-purple-500' : 'text-brand-600 focus:ring-brand-500'} cursor-pointer" />
             </td>
-            <td class="py-2.5 px-3 font-mono font-extrabold ${isHuvud ? 'text-purple-600 dark:text-purple-300 font-black cursor-pointer' : 'text-slate-800 dark:text-slate-100 font-bold'}" ${isHuvud ? `onclick="toggleHuvudartikelFilter('${safeKat}')" title="Klicka för att visa/dölja tillbehör för ${item.kategori}"` : ''}>${item.artnr}</td>
-            <td class="py-2.5 px-3 ${isHuvud ? 'cursor-pointer' : ''}" ${isHuvud ? `onclick="toggleHuvudartikelFilter('${safeKat}')" title="Klicka för att visa/dölja tillbehör för ${item.kategori}"` : ''}>
-              <div class="font-bold flex items-center flex-wrap gap-1.5 ${isHuvud ? 'text-purple-600 dark:text-purple-300' : 'text-slate-900 dark:text-white'}">
+            <td class="py-2.5 px-3 font-mono font-extrabold ${isHuvud ? 'text-purple-600 dark:text-purple-300 font-black' : 'text-slate-800 dark:text-slate-100 font-bold'}">${item.artnr}</td>
+            <td class="py-2.5 px-3">
+              <div class="font-bold flex items-center gap-1.5 ${isHuvud ? 'text-purple-600 dark:text-purple-300' : 'text-slate-900 dark:text-white'}">
                 ${isHuvud ? '<i class="fa-solid fa-star text-purple-500 dark:text-purple-400 text-[10px]"></i>' : ''}
                 <span>${item.name}</span>
-                ${isHuvud ? `
-                  <span class="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold ${isActiveHuvud ? 'bg-purple-600 text-white shadow-sm' : 'bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'} transition">
-                    <i class="fa-solid ${isActiveHuvud ? 'fa-chevron-up' : 'fa-chevron-down'} text-[9px]"></i>
-                    ${isActiveHuvud ? 'Dölj tillbehör' : `Visa tillbehör (${accCount} st)`}
-                  </span>
-                ` : ''}
               </div>
               ${item.liggplats && item.liggplats !== '–' && item.liggplats !== '-' ? `
                 <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono mt-0.5 ${isHuvud ? 'bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'}">
                   <i class="fa-solid fa-location-dot mr-1"></i>${item.liggplats}
                 </span>` : ''}
             </td>
-            <td class="py-2.5 px-3 ${isHuvud ? 'cursor-pointer' : ''}" ${isHuvud ? `onclick="toggleHuvudartikelFilter('${safeKat}')"` : ''}>
+            <td class="py-2.5 px-3">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                 isHuvud ? 'bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/30 shadow-sm' :
                 item.typ === 'Tillbehör' ? 'bg-sky-500/15 text-sky-600 dark:text-sky-300' :
