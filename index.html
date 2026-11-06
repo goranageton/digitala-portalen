@@ -1618,6 +1618,10 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="openAddCatalogArticleModal()" class="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition" title="Lägg till en ny artikel i tillbehörskatalogen">
+            <i class="fa-solid fa-plus"></i>
+            <span>Ny artikel</span>
+          </button>
           <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition">
             <i class="fa-solid fa-file-excel"></i>
             <span>Importera Excel</span>
@@ -1627,10 +1631,7 @@
             <i class="fa-solid fa-paste"></i>
             <span>Klistra in Excel</span>
           </button>
-          <button type="button" onclick="resetAccessoriesToDefault()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-bold text-slate-600 dark:text-slate-200 transition" title="Återställ till standardkatalog med 45+ artiklar">
-            <i class="fa-solid fa-rotate-left mr-1"></i>Standard
-          </button>
-          <button type="button" onclick="addManualSparePartRow()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-bold text-slate-600 dark:text-slate-200 transition" title="Skapa en tom manuell rad">
+          <button type="button" onclick="addManualSparePartRow()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-bold text-slate-600 dark:text-slate-200 transition" title="Skapa en tom manuell rad i reservdelar">
             <i class="fa-solid fa-plus mr-1"></i>Tom rad
           </button>
           <button type="button" onclick="closeSparePartsModal()" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-rose-500 hover:text-white flex items-center justify-center transition">
@@ -1719,6 +1720,70 @@
         <button type="button" onclick="closePasteAccessoriesModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-xs font-bold">Avbryt</button>
         <button type="button" onclick="processPastedAccessories()" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-extrabold">Uppdatera katalog</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: LÄGG TILL NY ARTIKEL I TILLBEHÖRSKATALOGEN ==================== -->
+  <div id="add-catalog-article-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center">
+            <i class="fa-solid fa-box-open text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Lägg till ny artikel</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Utöka listan med artikelnr, benämning, liggplats, kategori & roll</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeAddCatalogArticleModal()" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-rose-500 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <form onsubmit="saveNewCatalogArticle(event)" class="space-y-3.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Artikelnr *</label>
+            <input type="text" id="new-cat-artnr" required placeholder="T.ex. 81555" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Liggplats</label>
+            <input type="text" id="new-cat-liggplats" placeholder="T.ex. Hylla 6-3 eller Skåp 1-1" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Benämning *</label>
+          <input type="text" id="new-cat-name" required placeholder="T.ex. Manschett till Omron M7..." class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Kategori</label>
+            <input type="text" id="new-cat-kategori" list="new-cat-kategori-list" placeholder="T.ex. Omron M7, Posifon, Evondos..." class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            <datalist id="new-cat-kategori-list"></datalist>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Roll / Typ *</label>
+            <select id="new-cat-typ" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="Tillbehör">Tillbehör</option>
+              <option value="Emballage">Emballage</option>
+              <option value="Förbrukning">Förbrukning</option>
+              <option value="Huvudartikel">Huvudartikel</option>
+              <option value="Dokumentation">Dokumentation</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
+          <button type="button" onclick="closeAddCatalogArticleModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200">Avbryt</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow transition">
+            <i class="fa-solid fa-plus"></i>
+            <span>Spara i katalogen</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1825,10 +1890,11 @@
         <div>
           <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Steg-för-steg / Instruktioner</label>
           <textarea id="guide-steps" rows="6" placeholder="Skriv varje steg eller instruktion här..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm"></textarea>
+          <p class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-1.5"><i class="fa-regular fa-clipboard text-brand-500"></i> Tips: Du kan klistra in bilder direkt med <strong>Ctrl+V</strong> (t.ex. skärmklipp) eller text från andra program.</p>
         </div>
 
-        <!-- Uppladdning av Bilder, PDF och Word -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+        <!-- Uppladdning av Bilder, PDF, Word och Excel -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
           <label class="cursor-pointer flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-brand-500 transition text-center">
             <i class="fa-solid fa-images text-lg text-brand-500 mb-1"></i>
             <span class="text-xs font-bold">Lägg till bilder</span>
@@ -1847,12 +1913,19 @@
             <span class="text-[10px] text-slate-400">.docx / .doc</span>
             <input type="file" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple class="hidden" onchange="handleGuideWordsUpload(event)" />
           </label>
+          <label class="cursor-pointer flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-emerald-500 transition text-center">
+            <i class="fa-solid fa-file-excel text-lg text-emerald-500 mb-1"></i>
+            <span class="text-xs font-bold">Bifoga Excel</span>
+            <span class="text-[10px] text-slate-400">.xlsx / .xls / .csv</span>
+            <input type="file" accept=".xlsx,.xls,.csv" multiple class="hidden" onchange="handleGuideExcelsUpload(event)" />
+          </label>
         </div>
 
         <!-- Förhandsvisning av bifogade filer i formuläret -->
         <div id="guide-images-preview" class="flex flex-wrap gap-2"></div>
         <div id="guide-pdfs-preview" class="space-y-1.5"></div>
         <div id="guide-words-preview" class="space-y-1.5"></div>
+        <div id="guide-excels-preview" class="space-y-1.5"></div>
 
         <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
           <button type="button" onclick="closeGuideModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-sm font-semibold">Avbryt</button>
@@ -2383,6 +2456,7 @@
     let tempGuideImages = [];
     let tempGuidePdfs = [];
     let tempGuideWords = [];
+    let tempGuideExcels = [];
     let resolvedImageCache = {};
 
     // Lightbox-state
@@ -2864,9 +2938,19 @@
           }
         }
 
+        const uploadedExcels = [];
+        for (const xl of (guide.excels || [])) {
+          if (xl.data && xl.data.startsWith('data:')) {
+            const url = await uploadDataUrlToStorage(xl.data, xl.name || 'kalkylark.xlsx', 'excels');
+            uploadedExcels.push({ name: xl.name, data: url });
+          } else {
+            uploadedExcels.push(xl);
+          }
+        }
         guide.images = uploadedImages;
         guide.pdfs = uploadedPdfs;
         guide.words = uploadedWords;
+        guide.excels = uploadedExcels;
 
         const { error } = await supabaseClient.from('guides').upsert({
           id: guide.id,
@@ -5812,10 +5896,15 @@
               </div>
             </td>
             <td class="py-2.5 px-3 text-right">
-              <button type="button" onclick="addSingleAccessory('${safeArtnr}')" class="px-3 py-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition ml-auto">
-                <i class="fa-solid fa-plus text-[10px]"></i>
-                <span>Lägg till</span>
-              </button>
+              <div class="flex items-center justify-end gap-1.5">
+                <button type="button" onclick="addSingleAccessory('${safeArtnr}')" class="px-3 py-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition">
+                  <i class="fa-solid fa-plus text-[10px]"></i>
+                  <span>Lägg till</span>
+                </button>
+                <button type="button" onclick="deleteCatalogArticle('${safeArtnr}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition" title="Ta bort artikel ur listan">
+                  <i class="fa-solid fa-trash text-xs"></i>
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -6307,6 +6396,77 @@
     }
 
     // ==================== VY 2: LATHUNDAR, BILDER, PDF & WORD ====================
+    // ==================== HANTERA ARTIKLAR I KATALOGEN ====================
+    function openAddCatalogArticleModal() {
+      document.getElementById('new-cat-artnr').value = '';
+      document.getElementById('new-cat-name').value = '';
+      document.getElementById('new-cat-liggplats').value = '';
+      document.getElementById('new-cat-kategori').value = '';
+      document.getElementById('new-cat-typ').value = 'Tillbehör';
+      ensureInventoryStruct();
+      const catalog = state.inventory.accessoriesCatalog || DEFAULT_ACCESSORIES_CATALOG;
+      const cats = Array.from(new Set(catalog.map(x => (x.kategori || '').trim()).filter(Boolean)));
+      const dl = document.getElementById('new-cat-kategori-list');
+      if (dl) {
+        dl.innerHTML = cats.map(c => `<option value="${c}"></option>`).join('');
+      }
+      document.getElementById('add-catalog-article-modal').classList.remove('hidden');
+    }
+
+    function closeAddCatalogArticleModal() {
+      document.getElementById('add-catalog-article-modal').classList.add('hidden');
+    }
+
+    async function saveNewCatalogArticle(e) {
+      e.preventDefault();
+      ensureInventoryStruct();
+      const artnr = document.getElementById('new-cat-artnr').value.trim();
+      const name = document.getElementById('new-cat-name').value.trim();
+      const liggplats = document.getElementById('new-cat-liggplats').value.trim() || '–';
+      const kategori = document.getElementById('new-cat-kategori').value.trim() || 'Övrigt';
+      const typ = document.getElementById('new-cat-typ').value.trim() || 'Tillbehör';
+
+      if (!artnr || !name) {
+        showToast('Ange både artikelnr och benämning.');
+        return;
+      }
+
+      let catalog = state.inventory.accessoriesCatalog || [];
+      const existingIdx = catalog.findIndex(x => codesMatch(x.artnr, artnr));
+      const newArticle = { artnr, name, liggplats, kategori, typ };
+
+      if (existingIdx > -1) {
+        catalog[existingIdx] = newArticle;
+        showToast(`Artikeln ${artnr} (${name}) har uppdaterats i katalogen!`);
+      } else {
+        catalog.unshift(newArticle);
+        showToast(`Artikeln ${artnr} (${name}) har lagts till i katalogen!`);
+      }
+
+      state.inventory.accessoriesCatalog = catalog;
+      closeAddCatalogArticleModal();
+      populateAccessoriesCategories();
+      await syncInventoryToSupabase();
+      await saveState();
+      renderAccessoriesCatalog();
+    }
+
+    async function deleteCatalogArticle(artnr) {
+      ensureInventoryStruct();
+      const catalog = state.inventory.accessoriesCatalog || [];
+      const found = catalog.find(x => codesMatch(x.artnr, artnr));
+      const label = found ? `${found.artnr} (${found.name})` : artnr;
+      openConfirmModal('Ta bort artikel ur katalogen', `Vill du ta bort ${label} från tillbehörslistan?`, async () => {
+        state.inventory.accessoriesCatalog = catalog.filter(x => !codesMatch(x.artnr, artnr));
+        delete selectedAccessories[artnr];
+        populateAccessoriesCategories();
+        await syncInventoryToSupabase();
+        await saveState();
+        renderAccessoriesCatalog();
+        showToast(`Artikeln ${artnr} har tagits bort.`);
+      });
+    }
+
     function handleGuideImagesUpload(event) {
       const files = Array.from(event.target.files || []);
       files.forEach(file => {
@@ -6354,8 +6514,25 @@
       tempGuidePdfs.splice(idx, 1);
       renderGuideModalAttachments();
     }
+    function handleGuideExcelsUpload(event) {
+      const files = Array.from(event.target.files || []);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          tempGuideExcels.push({ name: file.name, data: e.target.result });
+          renderGuideModalAttachments();
+        };
+        reader.readAsDataURL(file);
+      });
+      event.target.value = '';
+    }
+
     function removeTempWord(idx) {
       tempGuideWords.splice(idx, 1);
+      renderGuideModalAttachments();
+    }
+    function removeTempExcel(idx) {
+      tempGuideExcels.splice(idx, 1);
       renderGuideModalAttachments();
     }
 
@@ -6385,6 +6562,58 @@
           <button type="button" onclick="removeTempWord(${i})" class="text-blue-500 hover:text-blue-700 font-bold">Ta bort</button>
         </div>
       `).join('');
+
+      const excelContainer = document.getElementById('guide-excels-preview');
+      if (excelContainer) {
+        excelContainer.innerHTML = tempGuideExcels.map((doc, i) => `
+          <div class="flex items-center justify-between px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+            <span class="font-semibold text-emerald-600 dark:text-emerald-400 truncate"><i class="fa-solid fa-file-excel mr-1.5"></i>${doc.name}</span>
+            <button type="button" onclick="removeTempExcel(${i})" class="text-rose-500 hover:text-rose-700 font-bold">Ta bort</button>
+          </div>
+        `).join('');
+      }
+    }
+
+    function initGuidePasteListener() {
+      const modal = document.getElementById('guide-modal');
+      if (!modal || modal._pasteListenerAttached) return;
+      modal._pasteListenerAttached = true;
+
+      modal.addEventListener('paste', e => {
+        const clipboardData = e.clipboardData || window.clipboardData;
+        if (!clipboardData) return;
+        const items = clipboardData.items;
+        if (!items) return;
+
+        let hasImage = false;
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type && item.type.indexOf('image') !== -1) {
+            hasImage = true;
+            const file = item.getAsFile();
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = uploadEvent => {
+                tempGuideImages.push(uploadEvent.target.result);
+                renderGuideModalAttachments();
+                showToast('Bild från urklipp har klistrats in och lagts till som bilaga!');
+              };
+              reader.readAsDataURL(file);
+            }
+          }
+        }
+
+        if (hasImage) {
+          e.preventDefault();
+        } else if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          const text = clipboardData.getData('text');
+          if (text) {
+            const stepsEl = document.getElementById('guide-steps');
+            stepsEl.value = (stepsEl.value ? stepsEl.value + '\n' : '') + text;
+            showToast('Text klistrades in i instruktioner!');
+          }
+        }
+      });
     }
 
     function openGuideModal(id = null) {
@@ -6400,6 +6629,7 @@
         tempGuideImages = [...(g.images || [])];
         tempGuidePdfs = [...(g.pdfs || [])];
         tempGuideWords = [...(g.words || [])];
+        tempGuideExcels = [...(g.excels || [])];
       } else {
         document.getElementById('guide-modal-title').textContent = 'Skapa ny lathund';
         document.getElementById('guide-id').value = '';
@@ -6409,8 +6639,10 @@
         tempGuideImages = [];
         tempGuidePdfs = [];
         tempGuideWords = [];
+        tempGuideExcels = [];
       }
       renderGuideModalAttachments();
+      initGuidePasteListener();
       document.getElementById('guide-modal').classList.remove('hidden');
     }
 
@@ -6432,7 +6664,8 @@
         steps: document.getElementById('guide-steps').value.trim(),
         images: [...tempGuideImages],
         pdfs: [...tempGuidePdfs],
-        words: [...tempGuideWords]
+        words: [...tempGuideWords],
+        excels: [...tempGuideExcels]
       };
 
       const syncedGuide = await upsertGuideToSupabase(obj);
@@ -6487,9 +6720,10 @@
 
       const pdfs = g.pdfs || [];
       const words = g.words || [];
+      const excels = g.excels || [];
       const docSec = document.getElementById('reader-docs-section');
       const docGrid = document.getElementById('reader-docs');
-      if (pdfs.length || words.length) {
+      if (pdfs.length || words.length || excels.length) {
         docSec.classList.remove('hidden');
         docGrid.innerHTML = [
           ...pdfs.map((p, i) => `
@@ -6507,6 +6741,16 @@
               <div class="flex gap-1.5">
                 <button type="button" onclick="previewSavedDoc('${g.id}', 'word', ${i})" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-xs font-bold">Preview</button>
                 <button type="button" onclick="downloadSavedDoc('${g.id}', 'word', ${i})" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 text-blue-500 text-xs font-bold"><i class="fa-solid fa-download"></i></button>
+              </div>
+            </div>
+          `)
+          ...
+          excels.map((x, i) => `
+            <div class="flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+              <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 truncate"><i class="fa-solid fa-file-excel mr-2"></i>${x.name}</span>
+              <div class="flex gap-1.5">
+                <button type="button" onclick="previewSavedDoc('${g.id}', 'excel', ${i})" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold">Preview</button>
+                <button type="button" onclick="downloadSavedDoc('${g.id}', 'excel', ${i})" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 text-emerald-500 text-xs font-bold"><i class="fa-solid fa-download"></i></button>
               </div>
             </div>
           `)
@@ -6543,6 +6787,36 @@
       if (type === 'pdf') {
         iconEl.className = 'fa-solid fa-file-pdf text-rose-500 text-lg';
         bodyEl.innerHTML = `<iframe src="${doc.data}" class="w-full h-full rounded-2xl bg-white border-0"></iframe>`;
+      } else if (type === 'excel') {
+        iconEl.className = 'fa-solid fa-file-excel text-emerald-500 text-lg';
+        bodyEl.innerHTML = `<div class="text-sm font-bold text-slate-400 flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> Laddar förhandsgranskning av kalkylark...</div>`;
+        try {
+          const res = await fetch(doc.data);
+          const arrayBuffer = await res.arrayBuffer();
+          if (window.XLSX) {
+            const wb = XLSX.read(arrayBuffer, { type: 'array' });
+            const sheetName = wb.SheetNames[0];
+            const htmlTable = XLSX.utils.sheet_to_html(wb.Sheets[sheetName]);
+            bodyEl.innerHTML = `
+              <div class="bg-white text-slate-900 w-full h-full overflow-auto p-4 sm:p-6 rounded-2xl shadow-inner text-xs font-mono">
+                <div class="mb-3 font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span><i class="fa-solid fa-table mr-1.5 text-emerald-600"></i> Blad: <strong>${sheetName}</strong></span>
+                  <span class="text-[11px] text-slate-400">${wb.SheetNames.length} blad totalt</span>
+                </div>
+                <div class="border border-slate-200 rounded-xl overflow-hidden">${htmlTable}</div>
+              </div>
+            `;
+          } else {
+            bodyEl.innerHTML = `<p class="text-sm">XLSX-biblioteket saknas. Klicka på Ladda ner ovan.</p>`;
+          }
+        } catch (err) {
+          bodyEl.innerHTML = `
+            <div class="text-center space-y-3 p-6">
+              <p class="text-sm font-semibold">Kunde inte förhandsgranska detta kalkylark direkt.</p>
+              <button type="button" onclick="downloadSavedDoc('${guideId}', 'excel', ${index})" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold">Ladda ner filen</button>
+            </div>
+          `;
+        }
       } else {
         iconEl.className = 'fa-solid fa-file-word text-blue-500 text-lg';
         bodyEl.innerHTML = `<div class="text-sm font-bold text-slate-400 flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> Laddar förhandsgranskning av Word-dokument...</div>`;
@@ -6578,13 +6852,17 @@
     function downloadSavedDoc(guideId, type, index) {
       const guide = state.guides.find(g => String(g.id) === String(guideId));
       if (!guide) return;
-      const list = type === 'pdf' ? (guide.pdfs || []) : (guide.words || []);
+      let list = [];
+      let defaultName = 'dokument.pdf';
+      if (type === 'pdf') { list = guide.pdfs || []; defaultName = 'dokument.pdf'; }
+      else if (type === 'word') { list = guide.words || []; defaultName = 'dokument.docx'; }
+      else if (type === 'excel') { list = guide.excels || []; defaultName = 'kalkylark.xlsx'; }
       const doc = list[index];
       if (!doc || !doc.data) return;
 
       const a = document.createElement('a');
       a.href = doc.data;
-      a.download = doc.name || (type === 'pdf' ? 'dokument.pdf' : 'dokument.docx');
+      a.download = doc.name || defaultName;
       a.target = '_blank';
       a.click();
     }
@@ -6612,6 +6890,7 @@
         const imgs = (guide.images || []).map(resolveImageSrc).filter(Boolean);
         const pdfs = guide.pdfs || [];
         const words = guide.words || [];
+        const excels = guide.excels || [];
 
         return `
           <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between space-y-4">
@@ -6637,7 +6916,7 @@
                 </div>
               ` : ''}
 
-              ${(pdfs.length || words.length) ? `
+              ${(pdfs.length || words.length || excels.length) ? `
                 <div class="pt-2 space-y-1.5">
                   <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Bifogade filer</div>
                   <div class="space-y-1.5">
@@ -6664,6 +6943,20 @@
                         <div class="flex items-center gap-1 shrink-0">
                           <button type="button" onclick="previewSavedDoc('${guide.id}', 'word', ${idx})" class="px-2 py-0.5 rounded-lg bg-blue-600 text-white font-bold text-[11px] hover:bg-blue-500">Preview</button>
                           <button type="button" onclick="downloadSavedDoc('${guide.id}', 'word', ${idx})" class="w-6 h-6 rounded-lg bg-white dark:bg-slate-800 text-blue-500 flex items-center justify-center hover:bg-blue-500 hover:text-white" title="Ladda ner Word-dokument">
+                            <i class="fa-solid fa-download text-[10px]"></i>
+                          </button>
+                        </div>
+                      </div>
+                    `).join('')}
+                    ${excels.map((xl, idx) => `
+                      <div class="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                        <span onclick="previewSavedDoc('${guide.id}', 'excel', ${idx})" class="cursor-pointer font-semibold text-emerald-600 dark:text-emerald-400 truncate flex items-center gap-2 flex-1">
+                          <i class="fa-solid fa-file-excel shrink-0"></i>
+                          <span class="truncate">${xl.name}</span>
+                        </span>
+                        <div class="flex items-center gap-1 shrink-0">
+                          <button type="button" onclick="previewSavedDoc('${guide.id}', 'excel', ${idx})" class="px-2 py-0.5 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-500">Preview</button>
+                          <button type="button" onclick="downloadSavedDoc('${guide.id}', 'excel', ${idx})" class="w-6 h-6 rounded-lg bg-white dark:bg-slate-800 text-emerald-500 flex items-center justify-center hover:bg-emerald-500 hover:text-white" title="Ladda ner Excel-fil">
                             <i class="fa-solid fa-download text-[10px]"></i>
                           </button>
                         </div>
