@@ -39,7 +39,7 @@
       hintBtn: 'Ledtråd',
       prevLevelBtn: 'Föregående bana',
       nextLevelQuickBtn: 'Nästa bana',
-      mapBtn: 'Level',
+      mapBtn: 'LEVEL',
       extraTubeBtn: 'Extra provrör (+2 kapacitet)',
       mysteryNote: '🔒 Innehåller hemliga vätskelager (?)',
       shortTubeNote: '🧪 Varierande rörstorlekar',
@@ -147,7 +147,7 @@
       hintBtn: 'Hint',
       prevLevelBtn: 'Previous Level',
       nextLevelQuickBtn: 'Next Level',
-      mapBtn: 'Level',
+      mapBtn: 'LEVEL',
       extraTubeBtn: 'Add Helper Tube',
       mysteryNote: '🔒 Contains Mystery Layers (?)',
       shortTubeNote: '🧪 Variable Tube Sizes',
@@ -1033,6 +1033,7 @@
     window.soundEngine.playAha();
     const bubble = document.getElementById('baltazar-speech');
     const charWrap = document.getElementById('baltazar-character-wrap');
+    const reactionPop = document.getElementById('goran-reaction-pop');
 
     if (bubble) {
       bubble.textContent = getNextWiseQuote();
@@ -1041,21 +1042,45 @@
       bubble.style.animation = 'quotePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
     }
 
-    if (charWrap) {
-      charWrap.style.animation = 'none';
-      void charWrap.offsetWidth;
-      charWrap.style.animation = 'tubeWinHop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    if (reactionPop) {
+      const funPopups = [
+        '🧪 Kung i labbet!',
+        '🔥 Chicago-style!',
+        '💡 Genialiskt!',
+        '🚀 Full kontroll!',
+        '⚗️ Rätt kemi!',
+        '😎 Boom! Så ska det se ut!'
+      ];
+      reactionPop.textContent = funPopups[Math.floor(Math.random() * funPopups.length)];
+      reactionPop.classList.remove('pop-active');
+      void reactionPop.offsetWidth;
+      reactionPop.classList.add('pop-active');
+    }
 
-      const star = document.createElement('div');
-      star.textContent = ['💡', '✨', '💧', '🧪', '⭐'][Math.floor(Math.random() * 5)];
-      star.style.position = 'absolute';
-      star.style.left = '50%';
-      star.style.top = '-10px';
-      star.style.fontSize = '24px';
-      star.style.pointerEvents = 'none';
-      star.style.animation = 'splashFly 0.6s ease-out forwards';
-      charWrap.appendChild(star);
-      setTimeout(() => star.remove(), 600);
+    if (charWrap) {
+      charWrap.classList.remove('goran-excited');
+      void charWrap.offsetWidth;
+      charWrap.classList.add('goran-excited');
+      setTimeout(() => charWrap.classList.remove('goran-excited'), 950);
+
+      const emojis = ['🧪', '⚗️', '💡', '🔥', '⭐', '🎉', '✨'];
+      for (let i = 0; i < 6; i++) {
+        const star = document.createElement('div');
+        star.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        star.style.position = 'absolute';
+        star.style.left = (25 + Math.random() * 50) + '%';
+        star.style.top = (5 + Math.random() * 25) + 'px';
+        star.style.fontSize = (18 + Math.random() * 10) + 'px';
+        star.style.pointerEvents = 'none';
+        star.style.zIndex = '25';
+        const dx = (Math.random() - 0.5) * 90;
+        const dy = -35 - Math.random() * 55;
+        star.style.setProperty('--dx', dx + 'px');
+        star.style.setProperty('--dy', dy + 'px');
+        star.style.animation = 'splashFly 0.75s cubic-bezier(0.2, 0.8, 0.3, 1) forwards';
+        charWrap.appendChild(star);
+        setTimeout(() => star.remove(), 750);
+      }
     }
   }
 
@@ -1085,12 +1110,21 @@
       bubble.style.animation = 'quotePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
     }
 
-    // Professor hop & AHA reaction
+    // Goran hop & AHA reaction
     const charWrap = document.getElementById('baltazar-character-wrap');
     if (charWrap) {
-      charWrap.style.animation = 'none';
+      charWrap.classList.remove('goran-excited');
       void charWrap.offsetWidth;
-      charWrap.style.animation = 'tubeWinHop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      charWrap.classList.add('goran-excited');
+      setTimeout(() => charWrap.classList.remove('goran-excited'), 950);
+    }
+    const reactionPop = document.getElementById('goran-reaction-pop');
+    if (reactionPop) {
+      const leverPopups = ['⚗️ Magisk droppe!', '🔥 Full fart i labbet!', '🧪 Perfekt blandning!', '💡 AHA!'];
+      reactionPop.textContent = leverPopups[Math.floor(Math.random() * leverPopups.length)];
+      reactionPop.classList.remove('pop-active');
+      void reactionPop.offsetWidth;
+      reactionPop.classList.add('pop-active');
     }
 
     const ahaBulb = document.getElementById('baltazar-aha-bulb');
