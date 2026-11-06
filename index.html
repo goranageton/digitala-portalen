@@ -635,104 +635,81 @@
     </section>
 
     <!-- ==================== VY 5: ANTAL REKONDADE (PIVOTTABELL GORAG1 & MATOL39) ==================== -->
-    <section id="view-rekondCount" class="hidden space-y-6">
-      <div class="bg-white dark:bg-slate-800/95 p-5 rounded-3xl shadow-sm border-2 border-indigo-500/30 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-3.5">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25">
-              <i class="fa-solid fa-chart-column text-lg"></i>
-            </div>
-            <div>
-              <h3 class="text-base font-extrabold flex items-center gap-2">
-                <span>Antal rekondade – Pivottabell</span>
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">gorag1 & matol39</span>
-              </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Importera Excel-fil med rekonder. Filtrerar automatiskt fram enheter utförda av <strong>gorag1</strong> och <strong>matol39</strong> och sorterar efter fastställd artikelordning.</p>
-            </div>
+    <section id="view-rekondCount" class="hidden space-y-3.5">
+      <!-- 1. KOMPAKT VERKTYGSRAD (Statusbrickor, Filter & Funktionsknappar) -->
+      <div class="bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-2xl shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        <!-- Vänster: Nyckeltal i micro-badges -->
+        <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+          <div class="h-8 px-2.5 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-300 border border-sky-500/20 text-xs font-bold flex items-center gap-1.5" title="Totalsumma rekondade enheter">
+            <i class="fa-solid fa-calculator text-[11px] opacity-75"></i>
+            <span>Totalt:</span>
+            <span id="kpi-rekond-count-total" class="font-extrabold font-mono">0</span>
           </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <label class="cursor-pointer px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow transition">
-              <i class="fa-solid fa-file-excel"></i>
-              <span>Importera Excel</span>
-              <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleRekondCountFileUpload(event)" />
-            </label>
-            <button type="button" onclick="openRekondCountModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow transition">
-              <i class="fa-solid fa-paste"></i>
-              <span>Klistra in Excel</span>
-            </button>
-            <button type="button" onclick="toggleAllRekondCountArticles(true)" class="px-2.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-bold transition" title="Expandera alla artiklar">
-              <i class="fa-solid fa-angles-down"></i>
-            </button>
-            <button type="button" onclick="toggleAllRekondCountArticles(false)" class="px-2.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-bold transition" title="Minimera alla artiklar">
-              <i class="fa-solid fa-angles-up"></i>
-            </button>
-            <button type="button" onclick="clearRekondCountData()" class="px-2.5 py-2 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white text-xs font-bold transition" title="Rensa pivottabell">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
+          <div class="h-8 px-2.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20 text-xs font-bold flex items-center gap-1.5" title="Enheter utförda av Goran (gorag1)">
+            <i class="fa-solid fa-user-check text-[11px] opacity-75"></i>
+            <span>Goran:</span>
+            <span id="kpi-rekond-count-gorag" class="font-extrabold font-mono">0</span>
+          </div>
+          <div class="h-8 px-2.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 text-xs font-bold flex items-center gap-1.5" title="Enheter utförda av Mats (matol39)">
+            <i class="fa-solid fa-user-check text-[11px] opacity-75"></i>
+            <span>Mats:</span>
+            <span id="kpi-rekond-count-matol" class="font-extrabold font-mono">0</span>
+          </div>
+          <div class="h-8 px-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold flex items-center gap-1.5" title="Antal unika artiklar">
+            <i class="fa-solid fa-cubes text-[11px] opacity-75"></i>
+            <span>Artiklar:</span>
+            <span id="kpi-rekond-count-unique" class="font-extrabold font-mono">0</span>
           </div>
         </div>
 
-        <!-- Snabb-KPI för Antal rekondade -->
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <div class="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-between">
-            <div>
-              <div class="text-[11px] font-extrabold uppercase tracking-wider text-sky-500">Totalsumma (Antal av Benämning)</div>
-              <div id="kpi-rekond-count-total" class="text-2xl font-black text-slate-800 dark:text-white mt-0.5">0</div>
-            </div>
-            <i class="fa-solid fa-calculator text-2xl text-sky-500/50"></i>
-          </div>
-          <div class="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-between">
-            <div>
-              <div class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-400">Goran (gorag1)</div>
-              <div id="kpi-rekond-count-gorag" class="text-2xl font-black text-slate-800 dark:text-white mt-0.5">0</div>
-            </div>
-            <i class="fa-solid fa-user-check text-2xl text-indigo-500/50"></i>
-          </div>
-          <div class="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-between">
-            <div>
-              <div class="text-[11px] font-extrabold uppercase tracking-wider text-purple-400">Mats (matol39)</div>
-              <div id="kpi-rekond-count-matol" class="text-2xl font-black text-slate-800 dark:text-white mt-0.5">0</div>
-            </div>
-            <i class="fa-solid fa-user-check text-2xl text-purple-500/50"></i>
-          </div>
-          <div class="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between">
-            <div>
-              <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-500">Unika artiklar</div>
-              <div id="kpi-rekond-count-unique" class="text-2xl font-black text-slate-800 dark:text-white mt-0.5">0</div>
-            </div>
-            <i class="fa-solid fa-cubes text-2xl text-emerald-500/50"></i>
-          </div>
+        <!-- Mitten: Filter för Benämning och Tekniker -->
+        <div class="flex items-center gap-2 flex-1 max-w-xl">
+          <select id="rekond-count-benamning-select" onchange="renderRekondCountPivot()" class="flex-1 px-3 py-1.5 h-8 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer truncate" title="Filtrera på artikel eller benämning">
+            <option value="all">Alla artiklar &amp; benämningar</option>
+          </select>
+          <select id="rekond-count-user-filter" onchange="renderRekondCountPivot()" class="w-44 px-2.5 py-1.5 h-8 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shrink-0" title="Filtrera på tekniker">
+            <option value="all">Alla (gorag1 &amp; matol39)</option>
+            <option value="gorag1">Endast Goran</option>
+            <option value="matol39">Endast Mats</option>
+          </select>
         </div>
 
-        <!-- Sök & Filter i pivottabellen -->
-        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          <div class="sm:col-span-8">
-            <select id="rekond-count-benamning-select" onchange="renderRekondCountPivot()" class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm truncate">
-              <option value="all">Alla benämningar</option>
-            </select>
-          </div>
-          <div class="sm:col-span-4">
-            <select id="rekond-count-user-filter" onchange="renderRekondCountPivot()" class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm">
-              <option value="all">Alla (gorag1 & matol39)</option>
-              <option value="gorag1">Endast gorag1 (Goran)</option>
-              <option value="matol39">Endast matol39 (Mats)</option>
-            </select>
-          </div>
+        <!-- Höger: Knappar (Excel, Expandera/Fäll ihop, Rensa) -->
+        <div class="flex items-center gap-1.5 shrink-0 self-end xl:self-auto">
+          <label class="cursor-pointer h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Importera ny Excel-fil för gorag1 & matol39">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>Importera</span>
+            <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleRekondCountFileUpload(event)" />
+          </label>
+          <button type="button" onclick="openRekondCountModal()" class="h-8 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition" title="Klistra in Excel-rader direkt">
+            <i class="fa-solid fa-paste"></i>
+            <span class="hidden sm:inline">Klistra in</span>
+          </button>
+          <button type="button" onclick="toggleAllRekondCountArticles(true)" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold border border-slate-200 dark:border-slate-700 transition" title="Expandera alla artiklar">
+            <i class="fa-solid fa-angles-down"></i>
+          </button>
+          <button type="button" onclick="toggleAllRekondCountArticles(false)" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold border border-slate-200 dark:border-slate-700 transition" title="Fäll ihop alla artiklar">
+            <i class="fa-solid fa-angles-up"></i>
+          </button>
+          <button type="button" onclick="clearRekondCountData()" class="h-8 w-8 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white text-xs font-bold flex items-center justify-center border border-rose-500/20 transition" title="Rensa pivottabell">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
         </div>
+      </div>
 
-        <!-- Själva Pivottabellen (Excel-liknande stil som i bilden) -->
-        <div class="overflow-x-auto overflow-y-auto custom-scrollbar rounded-2xl border border-slate-300 dark:border-slate-700 max-h-[560px] shadow-inner">
-          <table class="w-full text-left border-collapse">
-            <thead class="sticky top-0 z-10 bg-sky-100 dark:bg-sky-950/95 text-slate-800 dark:text-sky-200 text-xs font-extrabold border-b-2 border-sky-300 dark:border-sky-700">
+      <!-- 2. EFFEKTIV PIVOTTABELL (Fast skärmhöjd, integrerad trädstruktur och kompakt radavstånd) -->
+      <div class="bg-white dark:bg-slate-900/90 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80 overflow-hidden">
+        <div class="overflow-x-auto overflow-y-auto custom-scrollbar max-h-[calc(100vh-220px)] min-h-[400px]">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-300 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th class="py-3 px-4">Radetiketter</th>
-                <th class="py-3 px-5 w-44 text-right">Antal av Benämning</th>
-                <th class="py-3 px-3 w-16 text-center">Åtgärd</th>
+                <th class="py-2.5 px-3">Artikel &amp; Benämning</th>
+                <th class="py-2.5 px-4 w-36 text-right">Antal</th>
+                <th class="py-2.5 px-2 w-12 text-center"></th>
               </tr>
             </thead>
-            <tbody id="rekond-count-tbody" class="divide-y divide-slate-200/70 dark:divide-slate-800 text-xs sm:text-sm"></tbody>
-            <tfoot id="rekond-count-tfoot" class="sticky bottom-0 z-10 bg-sky-200/90 dark:bg-sky-900/95 text-slate-900 dark:text-white font-black text-xs sm:text-sm border-t-2 border-sky-400 dark:border-sky-600"></tfoot>
+            <tbody id="rekond-count-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+            <tfoot id="rekond-count-tfoot" class="sticky bottom-0 z-10 bg-slate-200/90 dark:bg-slate-950/95 text-slate-900 dark:text-white font-black border-t-2 border-slate-300 dark:border-slate-700"></tfoot>
           </table>
         </div>
       </div>
@@ -3852,53 +3829,69 @@
         const isCollapsed = Boolean(collapsedRekondCountArticles[artKey]);
         const safeArt = artKey.replace(/'/g, "\\'");
 
-        // Artikelrad (huvudrad med utfällningsknapp och delsumma)
+        // Huvudnamn för artikeln om det finns
+        const benamningNames = Object.keys(group.benamningar);
+        const firstName = benamningNames.length === 1 ? benamningNames[0] : (benamningNames[0] || '');
+
+        // Artikelrad: Huvudrad på en enda linje (Tag + Benämning + Summa)
         html += `
-          <tr onclick="toggleRekondCountCollapse('${safeArt}')" class="cursor-pointer bg-slate-100/90 dark:bg-slate-800/95 hover:bg-sky-500/10 dark:hover:bg-sky-500/15 font-extrabold text-slate-900 dark:text-white border-t border-slate-300 dark:border-slate-700 transition select-none group">
-            <td class="py-2.5 px-4 flex items-center justify-between gap-2.5">
-              <div class="flex items-center gap-2.5">
-                <span class="w-5 h-5 rounded-md bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-600 dark:text-slate-200 shadow-sm">
+          <tr onclick="toggleRekondCountCollapse('${safeArt}')" class="cursor-pointer bg-slate-50/80 dark:bg-slate-900/90 hover:bg-indigo-500/10 dark:hover:bg-indigo-500/15 font-bold text-slate-900 dark:text-white border-t border-slate-200 dark:border-slate-800 transition select-none group">
+            <td class="py-2 px-3">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-4 h-4 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[9px] text-slate-500 dark:text-slate-300 shrink-0 shadow-xs">
                   <i class="fa-solid ${isCollapsed ? 'fa-plus' : 'fa-minus'}"></i>
                 </span>
-                <span class="font-mono text-sm tracking-tight">${artKey}</span>
+                <span class="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-mono font-extrabold text-xs shrink-0 border border-indigo-500/25">
+                  ${artKey}
+                </span>
+                <span class="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate flex-1" title="${firstName}">
+                  ${firstName}
+                </span>
               </div>
             </td>
-            <td class="py-2.5 px-5 text-right font-mono text-sm font-black text-sky-700 dark:text-sky-300">${group.total}</td>
-            <td class="py-2.5 px-3 text-center">
-              <button type="button" onclick="event.stopPropagation(); deleteRekondCountArticle('${safeArt}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition inline-flex items-center justify-center" title="Ta bort artikel ${artKey}">
-                <i class="fa-solid fa-trash-can text-xs"></i>
+            <td class="py-2 px-4 text-right font-mono text-xs font-black text-indigo-600 dark:text-indigo-300">${group.total}</td>
+            <td class="py-2 px-2 text-center">
+              <button type="button" onclick="event.stopPropagation(); deleteRekondCountArticle('${safeArt}')" class="w-6 h-6 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition inline-flex items-center justify-center" title="Ta bort artikel ${artKey}">
+                <i class="fa-solid fa-trash text-[10px]"></i>
               </button>
             </td>
           </tr>
         `;
 
-        // Underrader för varje Benämning
+        // Underrader: När man expanderar visas teknikernas fördelning kompakt indragen
         if (!isCollapsed) {
           const benamningEntries = Object.entries(group.benamningar).sort((a, b) => a[0].localeCompare(b[0], 'sv'));
           benamningEntries.forEach(([benamningName, bData]) => {
             const safeName = benamningName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-            let userBreakdown = '';
-            if (bData.users.gorag1 > 0 || bData.users.matol39 > 0) {
-              const parts = [];
-              if (bData.users.gorag1 > 0) parts.push(`gorag1: ${bData.users.gorag1}`);
-              if (bData.users.matol39 > 0) parts.push(`matol39: ${bData.users.matol39}`);
-              userBreakdown = `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono">${parts.join(' • ')}</span>`;
+            
+            // Teknikerfördelning (Goran / Mats)
+            if (bData.users.gorag1 > 0) {
+              html += `
+                <tr class="bg-white/40 dark:bg-slate-950/40 hover:bg-slate-100/60 dark:hover:bg-slate-850/60 transition text-xs">
+                  <td class="py-1 pl-10 pr-3 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                    <span class="font-medium">gorag1 (Goran)</span>
+                    ${benamningEntries.length > 1 ? `<span class="text-[10px] text-slate-400 truncate opacity-75">• ${benamningName}</span>` : ''}
+                  </td>
+                  <td class="py-1 px-4 text-right font-mono font-bold text-slate-700 dark:text-slate-300">${bData.users.gorag1}</td>
+                  <td class="py-1 px-2 text-center"></td>
+                </tr>
+              `;
             }
 
-            html += `
-              <tr class="bg-white dark:bg-slate-900/70 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
-                <td class="py-2 pl-11 pr-4 text-slate-700 dark:text-slate-200 font-medium">
-                  <span>${benamningName}</span>
-                  ${userBreakdown}
-                </td>
-                <td class="py-2 px-5 text-right font-mono font-bold text-slate-800 dark:text-slate-100">${bData.total}</td>
-                <td class="py-2 px-3 text-center">
-                  <button type="button" onclick="deleteRekondCountItem('${safeArt}', '${safeName}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition inline-flex items-center justify-center" title="Ta bort '${safeName}'">
-                    <i class="fa-solid fa-trash-can text-xs"></i>
-                  </button>
-                </td>
-              </tr>
-            `;
+            if (bData.users.matol39 > 0) {
+              html += `
+                <tr class="bg-white/40 dark:bg-slate-950/40 hover:bg-slate-100/60 dark:hover:bg-slate-850/60 transition text-xs">
+                  <td class="py-1 pl-10 pr-3 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                    <span class="font-medium">matol39 (Mats)</span>
+                    ${benamningEntries.length > 1 ? `<span class="text-[10px] text-slate-400 truncate opacity-75">• ${benamningName}</span>` : ''}
+                  </td>
+                  <td class="py-1 px-4 text-right font-mono font-bold text-slate-700 dark:text-slate-300">${bData.users.matol39}</td>
+                  <td class="py-1 px-2 text-center"></td>
+                </tr>
+              `;
+            }
           });
         }
       });
@@ -3906,9 +3899,9 @@
       tbody.innerHTML = html;
       tfoot.innerHTML = `
         <tr>
-          <td class="py-3 px-4">Totalsumma</td>
-          <td class="py-3 px-5 text-right font-mono text-base">${totalSum}</td>
-          <td class="py-3 px-3"></td>
+          <td class="py-2.5 px-3 font-extrabold text-xs">Totalsumma</td>
+          <td class="py-2.5 px-4 text-right font-mono text-sm font-black text-indigo-600 dark:text-indigo-400">${totalSum}</td>
+          <td class="py-2.5 px-2"></td>
         </tr>
       `;
     }
