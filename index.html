@@ -878,28 +878,28 @@
       <!-- Huvudarbetsyta: Flikar, Sökning & Tabell -->
       <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         
-        <!-- Flikmeny -->
-        <div class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-4 pt-3 flex flex-wrap items-center justify-between gap-2">
-          <div class="flex space-x-1 overflow-x-auto" id="licensslutTabsContainer">
-            <button type="button" onclick="setLicensslutTab('all_auto')" id="tab-licensslut-all_auto" class="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-2xl border-b-2 border-teal-500 text-teal-600 dark:text-teal-400 bg-white dark:bg-slate-900 shadow-sm flex items-center gap-2">
-              <i class="fa-solid fa-code-compare"></i>
-              <span>Jämförelse: Läkemedelsautomater</span>
-              <span id="badge-licensslut-all_auto" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/20 font-mono">0</span>
+        <!-- Samlad horisontell filterrad (Flexbox) -->
+        <div class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-slate-200/50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800/80" id="licensslutTabsContainer">
+            <button type="button" onclick="setLicensslutTab('all_auto')" id="tab-licensslut-all_auto" class="h-8 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-1.5 select-none bg-indigo-600 text-white border border-indigo-400/50 shadow-md shadow-indigo-600/30">
+              <i class="fa-solid fa-code-compare text-[11px]"></i>
+              <span>Alla</span>
+              <span id="badge-licensslut-all_auto" class="px-2 py-0.5 rounded-lg text-[11px] font-mono font-extrabold bg-white/20 text-white border border-white/20">0</span>
             </button>
-            <button type="button" onclick="setLicensslutTab('matched')" id="tab-licensslut-matched" class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-2xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2">
-              <i class="fa-solid fa-circle-check text-emerald-500"></i>
-              <span>Finns i Lager 81</span>
-              <span id="badge-licensslut-matched" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-mono">0</span>
+            <button type="button" onclick="setLicensslutTab('matched')" id="tab-licensslut-matched" class="h-8 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-1.5 select-none bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700/50 hover:border-slate-600 opacity-50">
+              <i class="fa-solid fa-circle-check text-[11px] text-emerald-500"></i>
+              <span>Finns i lager 81</span>
+              <span id="badge-licensslut-matched" class="px-2 py-0.5 rounded-lg text-[11px] font-mono font-extrabold bg-slate-900/60 text-slate-400 border border-slate-800">0</span>
             </button>
-            <button type="button" onclick="setLicensslutTab('unmatched')" id="tab-licensslut-unmatched" class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-2xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2">
-              <i class="fa-solid fa-circle-xmark text-amber-500"></i>
-              <span>Saknas i Lager 81</span>
-              <span id="badge-licensslut-unmatched" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/20 font-mono">0</span>
+            <button type="button" onclick="setLicensslutTab('unmatched')" id="tab-licensslut-unmatched" class="h-8 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-1.5 select-none bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700/50 hover:border-slate-600 opacity-50">
+              <i class="fa-solid fa-circle-xmark text-[11px] text-amber-500"></i>
+              <span>Saknas i lager 81</span>
+              <span id="badge-licensslut-unmatched" class="px-2 py-0.5 rounded-lg text-[11px] font-mono font-extrabold bg-slate-900/60 text-slate-400 border border-slate-800">0</span>
             </button>
-            <button type="button" onclick="setLicensslutTab('master')" id="tab-licensslut-master" class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-2xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2">
-              <i class="fa-solid fa-box-archive text-blue-500"></i>
-              <span>Lager 81 (Artnr 83322 &amp; 87613)</span>
-              <span id="badge-licensslut-master" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/20 font-mono">0</span>
+            <button type="button" onclick="setLicensslutTab('master')" id="tab-licensslut-master" class="h-8 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-1.5 select-none bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700/50 hover:border-slate-600 opacity-50">
+              <i class="fa-solid fa-box-archive text-[11px] text-blue-500"></i>
+              <span>Lager 81</span>
+              <span id="badge-licensslut-master" class="px-2 py-0.5 rounded-lg text-[11px] font-mono font-extrabold bg-slate-900/60 text-slate-400 border border-slate-800">0</span>
             </button>
           </div>
         </div>
@@ -4336,6 +4336,38 @@
       setTxt('badge-licensslut-matched', matched);
       setTxt('badge-licensslut-unmatched', unmatched);
       setTxt('badge-licensslut-master', masterCount);
+      updateLicensslutTabStyles();
+    }
+
+    function updateLicensslutTabStyles() {
+      const tabs = [
+        { key: 'all_auto', activeColor: 'bg-indigo-600 border-indigo-400/50 shadow-indigo-600/30' },
+        { key: 'matched', activeColor: 'bg-emerald-600 border-emerald-400/50 shadow-emerald-600/30' },
+        { key: 'unmatched', activeColor: 'bg-amber-600 border-amber-400/50 shadow-amber-600/30' },
+        { key: 'master', activeColor: 'bg-sky-600 border-sky-400/50 shadow-sky-600/30' }
+      ];
+
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab-licensslut-' + t.key);
+        const badge = document.getElementById('badge-licensslut-' + t.key);
+        if (!btn) return;
+
+        const count = parseInt(badge?.textContent || '0', 10) || 0;
+        const isActive = (licensslutCurrentTab === t.key);
+
+        if (isActive) {
+          btn.className = `h-8 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-1.5 select-none text-white border shadow-md ${t.activeColor} opacity-100`;
+          if (badge) {
+            badge.className = "px-2 py-0.5 rounded-lg text-[11px] font-mono font-extrabold bg-white/20 text-white border border-white/20";
+          }
+        } else {
+          const zeroOpacity = (count === 0) ? 'opacity-50 hover:opacity-80' : 'opacity-100';
+          btn.className = `h-8 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-1.5 select-none bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700/50 hover:border-slate-600 ${zeroOpacity}`;
+          if (badge) {
+            badge.className = "px-2 py-0.5 rounded-lg text-[11px] font-mono font-extrabold bg-slate-900/60 text-slate-400 border border-slate-800";
+          }
+        }
+      });
     }
 
     function populateLicensslutForradFilter() {
@@ -4358,16 +4390,7 @@
 
     function setLicensslutTab(tab) {
       licensslutCurrentTab = tab;
-      const tabs = ['all_auto', 'matched', 'unmatched', 'master'];
-      tabs.forEach(t => {
-        const btn = document.getElementById('tab-licensslut-' + t);
-        if (!btn) return;
-        if (t === tab) {
-          btn.className = "px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-2xl border-b-2 border-teal-500 text-teal-600 dark:text-teal-400 bg-white dark:bg-slate-900 shadow-sm flex items-center gap-2";
-        } else {
-          btn.className = "px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-2xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2";
-        }
-      });
+      updateLicensslutTabStyles();
 
       const filterWrapper = document.getElementById('licensslutForradFilterWrapper');
       if (filterWrapper) {
