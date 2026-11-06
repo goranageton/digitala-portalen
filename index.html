@@ -311,72 +311,75 @@
 
     <!-- ==================== VY 4: REKOND ==================== -->
     <section id="view-inventory" class="hidden space-y-3.5">
-      <!-- 1. KOMPAKT ARBETSLIST (Topplist med Scanning, Statusbrickor & Funktionsknappar) -->
-      <div class="bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-2xl shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-        <!-- Vänster: Snabb-inmatning / Streckkodsskanning -->
-        <form onsubmit="handleInventoryScanSubmit(event)" class="flex items-center gap-2 flex-1 max-w-xl">
-          <div class="relative flex-1">
-            <i class="fa-solid fa-barcode absolute left-3 top-1/2 -translate-y-1/2 text-brand-500 text-sm"></i>
-            <input id="inv-scan-input" type="text" autocomplete="off" placeholder="Skanna eller skriv individnr / serienr (tryck Enter)..." class="w-full pl-9 pr-3 py-1.5 h-9 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs sm:text-sm font-bold tracking-wide focus:outline-none focus:ring-2 focus:ring-brand-500" />
+      <!-- 1. TVÅDELAD ARBETSLIST (Rad 1: Översikt & Verktyg, Rad 2: Skanningsfält Fokus) -->
+      <div class="bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 p-3 sm:px-4 sm:py-3 rounded-2xl shadow-sm space-y-2.5">
+        <!-- Rad 1: Översikt (Statusbrickor) & Verktyg (Funktionsknappar) -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+          <!-- Vänster: Statusbrickor (Inline Badges med klick för att byta vy-läge) -->
+          <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+            <button type="button" onclick="setInventoryViewMode('all')" id="inv-stat-badge-all" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700" title="Totalt förväntade i lager">
+              <span class="text-slate-400 font-semibold">Totalt:</span>
+              <span id="inv-stat-total" class="font-extrabold font-mono">0</span>
+            </button>
+            <button type="button" onclick="setInventoryViewMode('matched')" id="inv-stat-badge-matched" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30" title="Stämmer / Finns fysiskt och i system">
+              <i class="fa-solid fa-check text-[11px]"></i>
+              <span>Stämmer:</span>
+              <span id="inv-stat-matched" class="font-extrabold font-mono">0</span>
+            </button>
+            <button type="button" onclick="setInventoryViewMode('missing')" id="inv-stat-badge-missing" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30" title="Saknas / Ännu ej avprickade">
+              <i class="fa-regular fa-clock text-[11px]"></i>
+              <span>Saknas:</span>
+              <span id="inv-count-missing" class="font-extrabold font-mono">0</span>
+            </button>
+            <button type="button" onclick="setInventoryViewMode('extra')" id="inv-stat-badge-extra" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/30" title="Ej i systemet / Skannade men saknas i fil">
+              <i class="fa-solid fa-triangle-exclamation text-[11px]"></i>
+              <span>Ej i system:</span>
+              <span id="inv-stat-extra" class="font-extrabold font-mono">0</span>
+            </button>
+            <!-- Dold hjälpare för att behålla referenser i JS -->
+            <span id="inv-stat-scanned" class="hidden">0</span>
           </div>
-          <button type="submit" class="h-9 px-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-1.5 shrink-0 transition">
+
+          <!-- Höger: Funktionsknappar (Excel, Lager 81, Rekondplanering, Export & Rensa) -->
+          <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+            <label class="cursor-pointer h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Läs in ny Excel-fil">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Importera</span>
+              <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleInventoryExcelUpload(event)" />
+            </label>
+            <button type="button" onclick="toggleExcelSlicerPanel()" id="excel-slicer-toggle-btn" class="h-8 px-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Öppna statistik & urval för Lager 81">
+              <i class="fa-solid fa-warehouse"></i>
+              <span>Lager 81</span>
+            </button>
+            <button type="button" onclick="toggleRekondActivityPanel()" id="rekond-activity-toggle-btn" class="h-8 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Visa rekondplanering för planerade aktiviteter">
+              <i class="fa-solid fa-table-list"></i>
+              <span>Rekondplanering</span>
+            </button>
+            <button type="button" onclick="exportInventoryExcel()" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition" title="Exportera avstämningsrapport till Excel">
+              <i class="fa-solid fa-download text-brand-500"></i>
+              <span class="hidden sm:inline">Exportera</span>
+            </button>
+            <button type="button" onclick="resetInventoryChecks()" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-white text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition" title="Nollställ alla avprickningar">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span class="hidden sm:inline">Nollställ</span>
+            </button>
+            <button type="button" onclick="clearAllInventoryData()" class="h-8 w-8 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white text-xs font-bold flex items-center justify-center border border-rose-500/20 transition" title="Rensa all inventeringsdata">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Rad 2: Skanningsfält - Fokus (Full bredd med tydlig Pricka av-knapp) -->
+        <form onsubmit="handleInventoryScanSubmit(event)" class="flex items-center gap-2 w-full pt-0.5">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-barcode absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-500 text-sm"></i>
+            <input id="inv-scan-input" type="text" autocomplete="off" placeholder="Skanna eller skriv individnr / serienr (tryck Enter)..." class="w-full pl-10 pr-3 py-2 h-10 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs sm:text-sm font-bold tracking-wide focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+          <button type="submit" class="h-10 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 shrink-0 transition">
             <i class="fa-solid fa-check-double text-xs"></i>
             <span>Pricka av</span>
           </button>
         </form>
-
-        <!-- Mitten: Statusbrickor (Inline Badges med klick för att byta vy-läge) -->
-        <div class="flex flex-wrap items-center gap-1.5 shrink-0">
-          <button type="button" onclick="setInventoryViewMode('all')" id="inv-stat-badge-all" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700" title="Totalt förväntade i lager">
-            <span class="text-slate-400 font-semibold">Totalt:</span>
-            <span id="inv-stat-total" class="font-extrabold font-mono">0</span>
-          </button>
-          <button type="button" onclick="setInventoryViewMode('matched')" id="inv-stat-badge-matched" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30" title="Stämmer / Finns fysiskt och i system">
-            <i class="fa-solid fa-check text-[11px]"></i>
-            <span>Stämmer:</span>
-            <span id="inv-stat-matched" class="font-extrabold font-mono">0</span>
-          </button>
-          <button type="button" onclick="setInventoryViewMode('missing')" id="inv-stat-badge-missing" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30" title="Saknas / Ännu ej avprickade">
-            <i class="fa-regular fa-clock text-[11px]"></i>
-            <span>Saknas:</span>
-            <span id="inv-count-missing" class="font-extrabold font-mono">0</span>
-          </button>
-          <button type="button" onclick="setInventoryViewMode('extra')" id="inv-stat-badge-extra" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/30" title="Ej i systemet / Skannade men saknas i fil">
-            <i class="fa-solid fa-triangle-exclamation text-[11px]"></i>
-            <span>Ej i system:</span>
-            <span id="inv-stat-extra" class="font-extrabold font-mono">0</span>
-          </button>
-          <!-- Dold hjälpare för att behålla referenser i JS -->
-          <span id="inv-stat-scanned" class="hidden">0</span>
-        </div>
-
-        <!-- Höger: Funktionsknappar (Excel, Lager 81, Rekondaktivitet, Export & Rensa) -->
-        <div class="flex flex-wrap items-center gap-1.5 shrink-0 self-end xl:self-auto">
-          <label class="cursor-pointer h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Läs in ny Excel-fil">
-            <i class="fa-solid fa-file-excel"></i>
-            <span>Importera</span>
-            <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleInventoryExcelUpload(event)" />
-          </label>
-          <button type="button" onclick="toggleExcelSlicerPanel()" id="excel-slicer-toggle-btn" class="h-8 px-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Öppna statistik & urval för Lager 81">
-            <i class="fa-solid fa-warehouse"></i>
-            <span>Lager 81</span>
-          </button>
-          <button type="button" onclick="toggleRekondActivityPanel()" id="rekond-activity-toggle-btn" class="h-8 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Visa rekondplanering för planerade aktiviteter">
-            <i class="fa-solid fa-table-list"></i>
-            <span>Rekondplanering</span>
-          </button>
-          <button type="button" onclick="exportInventoryExcel()" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition" title="Exportera avstämningsrapport till Excel">
-            <i class="fa-solid fa-download text-brand-500"></i>
-            <span class="hidden sm:inline">Exportera</span>
-          </button>
-          <button type="button" onclick="resetInventoryChecks()" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-white text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition" title="Nollställ alla avprickningar">
-            <i class="fa-solid fa-rotate-left"></i>
-            <span class="hidden sm:inline">Nollställ</span>
-          </button>
-          <button type="button" onclick="clearAllInventoryData()" class="h-8 w-8 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white text-xs font-bold flex items-center justify-center border border-rose-500/20 transition" title="Rensa all inventeringsdata">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
-        </div>
       </div>
 
       <!-- Direkt återkoppling vid skanning -->
