@@ -310,42 +310,77 @@
     </section>
 
     <!-- ==================== VY 4: REKOND ==================== -->
-    <section id="view-inventory" class="hidden space-y-6">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-800/90 p-5 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80">
-        <div>
-          <h2 class="text-lg font-extrabold flex items-center gap-2">
-            <i class="fa-solid fa-barcode text-brand-500"></i>
-            <span>Rekond</span>
-          </h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Importera systemdata från Excel och skanna eller mata in individnummer/serienummer för fysisk lagerkontroll.</p>
+    <section id="view-inventory" class="hidden space-y-3.5">
+      <!-- 1. KOMPAKT ARBETSLIST (Topplist med Scanning, Statusbrickor & Funktionsknappar) -->
+      <div class="bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-2xl shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        <!-- Vänster: Snabb-inmatning / Streckkodsskanning -->
+        <form onsubmit="handleInventoryScanSubmit(event)" class="flex items-center gap-2 flex-1 max-w-xl">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-barcode absolute left-3 top-1/2 -translate-y-1/2 text-brand-500 text-sm"></i>
+            <input id="inv-scan-input" type="text" autocomplete="off" placeholder="Skanna eller skriv individnr / serienr (tryck Enter)..." class="w-full pl-9 pr-3 py-1.5 h-9 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs sm:text-sm font-bold tracking-wide focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+          <button type="submit" class="h-9 px-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-1.5 shrink-0 transition">
+            <i class="fa-solid fa-check-double text-xs"></i>
+            <span>Pricka av</span>
+          </button>
+        </form>
+
+        <!-- Mitten: Statusbrickor (Inline Badges med klick för att byta vy-läge) -->
+        <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+          <button type="button" onclick="setInventoryViewMode('all')" id="inv-stat-badge-all" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700" title="Totalt förväntade i lager">
+            <span class="text-slate-400 font-semibold">Totalt:</span>
+            <span id="inv-stat-total" class="font-extrabold font-mono">0</span>
+          </button>
+          <button type="button" onclick="setInventoryViewMode('matched')" id="inv-stat-badge-matched" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30" title="Stämmer / Finns fysiskt och i system">
+            <i class="fa-solid fa-check text-[11px]"></i>
+            <span>Stämmer:</span>
+            <span id="inv-stat-matched" class="font-extrabold font-mono">0</span>
+          </button>
+          <button type="button" onclick="setInventoryViewMode('missing')" id="inv-stat-badge-missing" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30" title="Saknas / Ännu ej avprickade">
+            <i class="fa-regular fa-clock text-[11px]"></i>
+            <span>Saknas:</span>
+            <span id="inv-count-missing" class="font-extrabold font-mono">0</span>
+          </button>
+          <button type="button" onclick="setInventoryViewMode('extra')" id="inv-stat-badge-extra" class="h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/30" title="Ej i systemet / Skannade men saknas i fil">
+            <i class="fa-solid fa-triangle-exclamation text-[11px]"></i>
+            <span>Ej i system:</span>
+            <span id="inv-stat-extra" class="font-extrabold font-mono">0</span>
+          </button>
+          <!-- Dold hjälpare för att behålla referenser i JS -->
+          <span id="inv-stat-scanned" class="hidden">0</span>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <label class="cursor-pointer px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition">
+
+        <!-- Höger: Funktionsknappar (Excel, Lager 81, Rekondaktivitet, Export & Rensa) -->
+        <div class="flex flex-wrap items-center gap-1.5 shrink-0 self-end xl:self-auto">
+          <label class="cursor-pointer h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Läs in ny Excel-fil">
             <i class="fa-solid fa-file-excel"></i>
-            <span>Importera Excel</span>
+            <span>Importera</span>
             <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleInventoryExcelUpload(event)" />
           </label>
-          <button type="button" onclick="toggleExcelSlicerPanel()" id="excel-slicer-toggle-btn" class="px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-sky-600/20 transition">
+          <button type="button" onclick="toggleExcelSlicerPanel()" id="excel-slicer-toggle-btn" class="h-8 px-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Öppna statistik & urval för Lager 81">
             <i class="fa-solid fa-warehouse"></i>
             <span>Lager 81</span>
           </button>
-          <button type="button" onclick="toggleRekondActivityPanel()" id="rekond-activity-toggle-btn" class="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition">
+          <button type="button" onclick="toggleRekondActivityPanel()" id="rekond-activity-toggle-btn" class="h-8 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Visa pivottabell för planerade rekondaktiviteter">
             <i class="fa-solid fa-table-list"></i>
-            <span>Rekondaktivitet</span>
+            <span>Pivottabell</span>
           </button>
-          <button type="button" onclick="exportInventoryExcel()" class="px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-bold flex items-center gap-2 transition" title="Exportera avstämningsrapport till Excel">
+          <button type="button" onclick="exportInventoryExcel()" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition" title="Exportera avstämningsrapport till Excel">
             <i class="fa-solid fa-download text-brand-500"></i>
-            <span>Exportera rapport</span>
+            <span class="hidden sm:inline">Exportera</span>
           </button>
-          <button type="button" onclick="resetInventoryChecks()" class="px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-700 hover:bg-amber-500 hover:text-white text-xs font-bold flex items-center gap-1.5 transition" title="Nollställ fysiska avprickningar men behåll systemlistan">
+          <button type="button" onclick="resetInventoryChecks()" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-white text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition" title="Nollställ alla avprickningar">
             <i class="fa-solid fa-rotate-left"></i>
-            <span>Nollställ kontroll</span>
+            <span class="hidden sm:inline">Nollställ</span>
           </button>
-          <button type="button" onclick="clearAllInventoryData()" class="px-3 py-2.5 rounded-2xl bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white text-xs font-bold transition" title="Rensa all inventeringsdata">
+          <button type="button" onclick="clearAllInventoryData()" class="h-8 w-8 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white text-xs font-bold flex items-center justify-center border border-rose-500/20 transition" title="Rensa all inventeringsdata">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
       </div>
+
+      <!-- Direkt återkoppling vid skanning -->
+      <div id="inv-scan-feedback" class="hidden p-3 rounded-2xl border text-xs sm:text-sm font-bold flex items-center justify-between gap-3"></div>
 
       <!-- EXCEL-STATISTIK & SLICER-PANEL (Benämning, Artikel, Serienummer, Individ & Total antal) -->
       <div id="excel-slicer-panel" class="hidden bg-white dark:bg-slate-800/95 p-5 rounded-3xl shadow-sm border border-sky-500/30 space-y-4">
@@ -504,146 +539,98 @@
         </div>
       </div>
 
-      <!-- Sammanfattningskort (KPI) -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div onclick="setInventoryViewMode('all')" class="cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-brand-500 transition">
-          <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">I Systemet (Totalt)</div>
-          <div id="inv-stat-total" class="text-2xl font-extrabold mt-1 text-slate-800 dark:text-white">0</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Förväntade på lager</div>
-        </div>
-        <div onclick="setInventoryViewMode('scanned')" class="cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-brand-500 transition">
-          <div class="text-[11px] font-extrabold uppercase tracking-wider text-brand-500">Inmatade / Skannade</div>
-          <div id="inv-stat-scanned" class="text-2xl font-extrabold mt-1 text-brand-600 dark:text-brand-400">0</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Kontrollerade enheter</div>
-        </div>
-        <div onclick="setInventoryViewMode('matched')" class="cursor-pointer bg-emerald-500/10 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-500/30 hover:border-emerald-500 transition">
-          <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Stämmer (I Lager)</div>
-          <div id="inv-stat-matched" class="text-2xl font-extrabold mt-1 text-emerald-600 dark:text-emerald-400">0</div>
-          <div class="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">Finns fysiskt & i system</div>
-        </div>
-        <div onclick="setInventoryViewMode('extra')" class="cursor-pointer bg-rose-500/10 dark:bg-rose-950/40 p-4 rounded-2xl border border-rose-500/30 hover:border-rose-500 transition">
-          <div class="text-[11px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">Ej i systemet</div>
-          <div id="inv-stat-extra" class="text-2xl font-extrabold mt-1 text-rose-600 dark:text-rose-400">0</div>
-          <div class="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5">Finns fysiskt men saknas i fil</div>
-        </div>
-      </div>
-
-      <!-- Fysisk Skanning / Snabbinmatning -->
-      <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border-2 border-brand-500/40 space-y-4">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
-          <label for="inv-scan-input" class="text-sm font-extrabold flex items-center gap-2">
-            <span class="w-7 h-7 rounded-xl bg-brand-600 text-white flex items-center justify-center text-xs"><i class="fa-solid fa-qrcode"></i></span>
-            <span>Fysisk kontroll – Skanna streckkod eller skriv Individnummer / Serienummer</span>
-          </label>
-          <span class="text-xs text-slate-400">Tryck <kbd class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono text-[11px]">Enter</kbd> efter varje nummer (handskanner stöds direkt)</span>
-        </div>
-
-        <form onsubmit="handleInventoryScanSubmit(event)" class="flex flex-col sm:flex-row gap-3">
-          <div class="relative flex-1">
-            <i class="fa-solid fa-barcode absolute left-4 top-1/2 -translate-y-1/2 text-brand-500 text-lg"></i>
-            <input id="inv-scan-input" type="text" autocomplete="off" placeholder="Skanna eller mata in individnummer (t.ex. 1875194) eller serienummer (t.ex. 522700878)..." class="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-base font-bold tracking-wide focus:outline-none focus:ring-2 focus:ring-brand-500" />
-          </div>
-          <button type="submit" class="px-6 py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-sm shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2 shrink-0 transition">
-            <i class="fa-solid fa-check-double"></i>
-            <span>Kontrollera / Pricka av</span>
-          </button>
-        </form>
-
-        <!-- Direkt återkoppling vid skanning -->
-        <div id="inv-scan-feedback" class="hidden p-3.5 rounded-2xl border text-xs sm:text-sm font-bold flex items-center justify-between gap-3"></div>
-      </div>
-
-      <!-- Snabbfilter & Rullista för tabell -->
-      <div class="bg-white dark:bg-slate-800/90 p-5 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80 space-y-4">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <!-- Vy-flikar för tabellen -->
-          <div class="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl">
-            <button type="button" onclick="setInventoryViewMode('all')" id="inv-mode-all" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition bg-brand-600 text-white">Alla (<span id="inv-count-all">0</span>)</button>
-            <button type="button" onclick="setInventoryViewMode('matched')" id="inv-mode-matched" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition text-slate-600 dark:text-slate-300">Stämmer / I lager (<span id="inv-count-matched">0</span>)</button>
-            <button type="button" onclick="setInventoryViewMode('missing')" id="inv-mode-missing" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition text-slate-600 dark:text-slate-300">Saknas (<span id="inv-count-missing">0</span>)</button>
-            <button type="button" onclick="setInventoryViewMode('extra')" id="inv-mode-extra" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition text-slate-600 dark:text-slate-300">Ej i systemet (<span id="inv-count-extra">0</span>)</button>
-            <button type="button" onclick="setInventoryViewMode('scanned')" id="inv-mode-scanned" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition text-slate-600 dark:text-slate-300">Inmatade i ordning (<span id="inv-count-scanned">0</span>)</button>
-          </div>
-
-          <!-- Fritextsökning & Filter i tabellen -->
-          <div class="flex flex-wrap items-center gap-2 flex-1 lg:max-w-md justify-end">
-            <select id="inv-filter-article" onchange="renderInventory()" class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold max-w-[180px] truncate">
-              <option value="ALL">Alla artiklar</option>
-            </select>
-            <div class="relative flex-1 min-w-[180px]">
-              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-              <input id="inv-table-search" type="text" oninput="renderInventory()" placeholder="Filtrera individ, serie, benämning..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500" />
+      <!-- 2. TVÅDELAD ARBETSYTA (SPLIT-VIEW: Vänster Huvudtabell ca 70%, Höger Reservdelar ca 30%) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
+        
+        <!-- VÄNSTER KOLUMN (ca 70% – lg:col-span-8): HUVUDTABELL FÖR AVPRICKNING -->
+        <div class="lg:col-span-8 bg-white dark:bg-slate-900/90 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80 p-3.5 space-y-3">
+          <!-- Filterlist & Sök integrerat i tabellens topp -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+            <!-- Vy-knappar -->
+            <div class="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl">
+              <button type="button" onclick="setInventoryViewMode('all')" id="inv-mode-all" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition bg-brand-600 text-white">Alla (<span id="inv-count-all">0</span>)</button>
+              <button type="button" onclick="setInventoryViewMode('matched')" id="inv-mode-matched" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition text-slate-600 dark:text-slate-300">Stämmer (<span id="inv-count-matched">0</span>)</button>
+              <button type="button" onclick="setInventoryViewMode('missing')" id="inv-mode-missing" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition text-slate-600 dark:text-slate-300">Saknas (<span id="inv-count-missing-btn">0</span>)</button>
+              <button type="button" onclick="setInventoryViewMode('extra')" id="inv-mode-extra" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition text-slate-600 dark:text-slate-300">Ej i system (<span id="inv-count-extra">0</span>)</button>
+              <button type="button" onclick="setInventoryViewMode('scanned')" id="inv-mode-scanned" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition text-slate-600 dark:text-slate-300">Skanningsordning (<span id="inv-count-scanned">0</span>)</button>
             </div>
-          </div>
-        </div>
 
-        <!-- Anpassad Rullista (Scrollable Table) -->
-        <div class="overflow-x-auto overflow-y-auto custom-scrollbar rounded-2xl border border-slate-200 dark:border-slate-700 max-h-[360px]">
-          <table class="w-full text-left border-collapse">
-            <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-              <tr>
-                <th class="py-3 px-4 w-20 text-center">Status</th>
-                <th class="py-3 px-4">Individnr</th>
-                <th class="py-3 px-4">Artikelnr</th>
-                <th class="py-3 px-4">Serienummer</th>
-                <th class="py-3 px-4">Benämning</th>
-                <th class="py-3 px-4 text-right">Åtgärd</th>
-              </tr>
-            </thead>
-            <tbody id="inv-table-body" class="divide-y divide-slate-200/70 dark:divide-slate-700/60 text-xs sm:text-sm"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Nedre sektion: Reservdelar & Statistik per Benämning -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <!-- Reservdelar -->
-        <div class="bg-white dark:bg-slate-800/90 p-5 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80 space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 class="text-base font-extrabold flex items-center gap-2 text-brand-600 dark:text-brand-400">
-                <i class="fa-solid fa-screwdriver-wrench"></i>
-                <span>Reservdelar</span>
-              </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 italic">Artnr 81549 & 82730 räknar automatiskt +4 st Batteri (86385).</p>
-            </div>
-            <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
-              <button type="button" onclick="openSparePartsModal()" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow transition">
-                <i class="fa-solid fa-plus"></i>
-                <span>Lägg till reservdel</span>
-              </button>
+            <!-- Fritextsökning & Artikelfilter -->
+            <div class="flex items-center gap-1.5 flex-1 sm:max-w-xs justify-end">
+              <select id="inv-filter-article" onchange="renderInventory()" class="px-2.5 py-1.5 h-8 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-xs font-bold max-w-[130px] truncate">
+                <option value="ALL">Alla artiklar</option>
+              </select>
+              <div class="relative flex-1 min-w-[130px]">
+                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input id="inv-table-search" type="text" oninput="renderInventory()" placeholder="Sök..." class="w-full pl-7 pr-2.5 py-1 h-8 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              </div>
             </div>
           </div>
 
-          <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700">
-            <table class="w-full text-left border-collapse text-xs sm:text-sm">
-              <thead class="bg-slate-800 text-white text-[11px] font-extrabold uppercase tracking-wider">
+          <!-- Rullista med direkt synlig tabell utan att behöva scrolla hela sidan -->
+          <div class="overflow-x-auto overflow-y-auto custom-scrollbar rounded-xl border border-slate-200 dark:border-slate-800 max-h-[calc(100vh-250px)] min-h-[380px]">
+            <table class="w-full text-left border-collapse">
+              <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-950 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th class="py-2.5 px-4 w-32">Reservdel artnr</th>
-                  <th class="py-2.5 px-4 w-36 text-center">Antal</th>
-                  <th class="py-2.5 px-4">Benämning</th>
-                  <th class="py-2.5 px-3 w-10 text-center">Åtgärd</th>
+                  <th class="py-2.5 px-3 w-14 text-center">Status</th>
+                  <th class="py-2.5 px-3">Individnr</th>
+                  <th class="py-2.5 px-3">Artikelnr</th>
+                  <th class="py-2.5 px-3">Serienummer</th>
+                  <th class="py-2.5 px-3">Benämning</th>
+                  <th class="py-2.5 px-3 text-right">Åtgärd</th>
                 </tr>
               </thead>
-              <tbody id="inv-spares-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
+              <tbody id="inv-table-body" class="divide-y divide-slate-200/70 dark:divide-slate-800 text-xs"></tbody>
             </table>
           </div>
         </div>
 
-        <!-- Statistik på Benämning -->
-        <div class="bg-white dark:bg-slate-800/90 p-5 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80 space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 class="text-xs font-mono font-extrabold uppercase tracking-widest text-slate-400">Antal per benämning</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Fördelning av hjälpmedel per benämning</p>
+        <!-- HÖGER KOLUMN (ca 30% – lg:col-span-4): FAST SIDOPANEL FÖR RESERVDELAR & STATISTIK -->
+        <div class="lg:col-span-4 space-y-3.5 sticky top-4">
+          <!-- Reservdelspanel -->
+          <div class="bg-white dark:bg-slate-900/90 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80 p-3.5 space-y-3">
+            <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+              <div>
+                <h3 class="text-sm font-extrabold flex items-center gap-1.5 text-brand-600 dark:text-brand-400">
+                  <i class="fa-solid fa-screwdriver-wrench text-xs"></i>
+                  <span>Reservdelar</span>
+                </h3>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Automatisk åtgång (+4 batterier på 81549/82730)</p>
+              </div>
+              <button type="button" onclick="openSparePartsModal()" class="px-2.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-extrabold flex items-center gap-1 shadow-sm transition">
+                <i class="fa-solid fa-plus text-[10px]"></i>
+                <span>Välj del</span>
+              </button>
             </div>
-            <select id="inv-benamning-stat-mode" onchange="renderInventory()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold">
-              <option value="checked">I lager / Avprickade</option>
-              <option value="all">Totalt i systemet</option>
-            </select>
+
+            <!-- Reservdelstabell / Minilista -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 max-h-[280px] overflow-y-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-300 text-[10px] font-extrabold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th class="py-2 px-2.5">Artnr & Del</th>
+                    <th class="py-2 px-2 text-center w-28">Antal</th>
+                    <th class="py-2 px-1 text-center w-8"></th>
+                  </tr>
+                </thead>
+                <tbody id="inv-spares-body" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+              </table>
+            </div>
           </div>
-          <div id="inv-benamning-stats" class="space-y-2.5 max-h-[260px] overflow-y-auto custom-scrollbar pr-1 font-mono"></div>
+
+          <!-- Statistik på Benämning (Kompakt sidokort) -->
+          <div class="bg-white dark:bg-slate-900/90 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80 p-3 space-y-2">
+            <div class="flex items-center justify-between gap-1 border-b border-slate-100 dark:border-slate-800 pb-1.5">
+              <span class="text-[10px] font-mono font-extrabold uppercase tracking-wider text-slate-400">Antal per benämning</span>
+              <select id="inv-benamning-stat-mode" onchange="renderInventory()" class="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[11px] font-bold">
+                <option value="checked">Avprickade</option>
+                <option value="all">Totalt i system</option>
+              </select>
+            </div>
+            <div id="inv-benamning-stats" class="space-y-1.5 max-h-[190px] overflow-y-auto custom-scrollbar pr-1 font-mono text-xs"></div>
+          </div>
         </div>
+
       </div>
     </section>
 
@@ -5966,7 +5953,10 @@
       // Uppdatera räknare på vy-knappar
       document.getElementById('inv-count-all').textContent = sys.length + extraScans.length;
       document.getElementById('inv-count-matched').textContent = matchedItems.length;
-      document.getElementById('inv-count-missing').textContent = missingItems.length;
+      const missEl = document.getElementById('inv-count-missing');
+      if (missEl) missEl.textContent = missingItems.length;
+      const missBtnEl = document.getElementById('inv-count-missing-btn');
+      if (missBtnEl) missBtnEl.textContent = missingItems.length;
       document.getElementById('inv-count-extra').textContent = extraScans.length;
       document.getElementById('inv-count-scanned').textContent = scans.length;
 
@@ -5974,9 +5964,9 @@
         const btn = document.getElementById(`inv-mode-${m}`);
         if (!btn) return;
         if (m === activeInventoryViewMode) {
-          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-extrabold transition bg-brand-600 text-white shadow';
+          btn.className = 'px-2.5 py-1 rounded-lg text-xs font-extrabold transition bg-brand-600 text-white shadow-sm';
         } else {
-          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-extrabold transition text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800';
+          btn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800';
         }
       });
 
@@ -6132,8 +6122,8 @@
       if (!state.inventory.spareParts.length) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="4" class="py-6 text-center text-slate-400 italic text-xs">
-              Inga reservdelar i listan. Klicka på <strong>"+ Lägg till reservdel"</strong> ovan för att välja tillbehör och antal från katalogen.
+            <td colspan="3" class="py-6 text-center text-slate-400 italic text-xs">
+              Inga delar i listan. Klicka på <strong>"+ Välj del"</strong> ovan för att lägga till.
             </td>
           </tr>
         `;
@@ -6141,21 +6131,19 @@
       }
       tbody.innerHTML = state.inventory.spareParts.map((sp, idx) => `
         <tr class="bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-          <td class="py-2 px-3">
-            <input type="text" value="${sp.artnr}" onchange="updateSparePartField(${idx}, 'artnr', this.value)" class="w-full px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-bold text-xs" />
+          <td class="py-1.5 px-2.5">
+            <div class="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">${sp.name || 'Reservdel'}</div>
+            <div class="text-[10px] font-mono text-brand-600 dark:text-brand-400">${sp.artnr}</div>
           </td>
-          <td class="py-2 px-3">
-            <div class="flex items-center justify-center gap-1.5">
-              <button type="button" onclick="stepSparePartCount(${idx}, -1)" class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-rose-500 hover:text-white font-extrabold transition">-</button>
-              <input type="number" min="0" value="${sp.count}" onchange="updateSparePartField(${idx}, 'count', this.value)" class="w-16 text-center py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-extrabold text-xs" />
-              <button type="button" onclick="stepSparePartCount(${idx}, 1)" class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white font-extrabold transition">+</button>
+          <td class="py-1.5 px-2">
+            <div class="flex items-center justify-center gap-1">
+              <button type="button" onclick="stepSparePartCount(${idx}, -1)" class="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-rose-500 hover:text-white font-extrabold text-xs transition flex items-center justify-center">-</button>
+              <input type="number" min="0" value="${sp.count}" onchange="updateSparePartField(${idx}, 'count', this.value)" class="w-12 text-center py-0.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-extrabold text-xs font-mono" />
+              <button type="button" onclick="stepSparePartCount(${idx}, 1)" class="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white font-extrabold text-xs transition flex items-center justify-center">+</button>
             </div>
           </td>
-          <td class="py-2 px-3">
-            <input type="text" value="${sp.name}" onchange="updateSparePartField(${idx}, 'name', this.value)" class="w-full px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-xs" />
-          </td>
-          <td class="py-2 px-3 text-center">
-            <button type="button" onclick="deleteSparePartRow(${idx})" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition inline-flex items-center justify-center" title="Ta bort hela artikeln"><i class="fa-solid fa-trash text-xs"></i></button>
+          <td class="py-1.5 px-1 text-center">
+            <button type="button" onclick="deleteSparePartRow(${idx})" class="w-6 h-6 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition inline-flex items-center justify-center" title="Ta bort del"><i class="fa-solid fa-trash text-[10px]"></i></button>
           </td>
         </tr>
       `).join('');
