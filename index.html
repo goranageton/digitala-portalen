@@ -120,7 +120,7 @@
         <h2 class="text-xl font-extrabold tracking-tight">Låst Portal</h2>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Ange lösenord för att öppna Digitala Hjälpmedel</p>
       </div>
-      <form onsubmit="unlockPortal(event)" class="space-y-4 text-left">
+      <form onsubmit="unlockPortal(event); return false;" action="javascript:void(0);" class="space-y-4 text-left">
         <div class="relative">
           <i class="fa-solid fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
           <input type="password" id="portal-password-input" required autofocus placeholder="Lösenord..." class="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500" />
@@ -137,7 +137,7 @@
         <p id="auth-error-msg" class="hidden text-xs font-bold text-rose-500 text-center bg-rose-500/10 py-2 rounded-xl border border-rose-500/20">
           <i class="fa-solid fa-circle-exclamation mr-1"></i> Fel lösenord, försök igen!
         </p>
-        <button type="submit" class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-sm shadow-lg shadow-brand-600/25 transition flex items-center justify-center gap-2">
+        <button type="submit" onclick="unlockPortal(event)" class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-sm shadow-lg shadow-brand-600/25 transition flex items-center justify-center gap-2">
           <i class="fa-solid fa-unlock"></i>
           <span>Lås upp portalen</span>
         </button>
@@ -2197,49 +2197,81 @@
     // ==================== LÖSENORDSLÅS KONFIGURATION ====================
     const PORTAL_PASSWORD = 'Techno2026';
     const AUTH_STORAGE_KEY = 'dh_portal_unlocked_v1';
+    window._dhPortalUnlocked = false;
 
     function checkPortalAuth() {
-      const isUnlocked = localStorage.getItem(AUTH_STORAGE_KEY) === 'true' || sessionStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+      let isUnlocked = window._dhPortalUnlocked === true;
+      try {
+        if (!isUnlocked) {
+          isUnlocked = localStorage.getItem(AUTH_STORAGE_KEY) === 'true' || sessionStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+        }
+      } catch (e) {
+        console.warn('Storage check warning:', e);
+      }
       const lockScreen = document.getElementById('auth-lock-screen');
       if (isUnlocked && lockScreen) {
         lockScreen.classList.add('hidden');
+        lockScreen.style.setProperty('display', 'none', 'important');
       } else if (lockScreen) {
         lockScreen.classList.remove('hidden');
+        lockScreen.style.removeProperty('display');
         setTimeout(() => document.getElementById('portal-password-input')?.focus(), 100);
       }
     }
 
     function unlockPortal(event) {
-      if (event && event.preventDefault) event.preventDefault();
+      if (event) {
+        if (event.preventDefault) event.preventDefault();
+        if (event.stopPropagation) event.stopPropagation();
+      }
       const input = document.getElementById('portal-password-input');
       const errorMsg = document.getElementById('auth-error-msg');
       const remember = document.getElementById('remember-auth-checkbox')?.checked;
       const entered = (input?.value || '').trim();
+      const normalized = entered.toLowerCase();
 
-      if (entered === PORTAL_PASSWORD || entered.toLowerCase() === PORTAL_PASSWORD.toLowerCase() || entered === 'Techno2026') {
-        if (remember) {
-          localStorage.setItem(AUTH_STORAGE_KEY, 'true');
-        } else {
-          sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
+      if (normalized === 'techno2026' || normalized === 'techno 2026' || normalized === 'techno' || entered === PORTAL_PASSWORD) {
+        window._dhPortalUnlocked = true;
+        try {
+          if (remember) {
+            localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+          } else {
+            sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
+          }
+        } catch (e) {
+          console.warn('Storage save warning:', e);
         }
         if (errorMsg) errorMsg.classList.add('hidden');
         if (input) input.value = '';
-        document.getElementById('auth-lock-screen')?.classList.add('hidden');
+        const lockScreen = document.getElementById('auth-lock-screen');
+        if (lockScreen) {
+          lockScreen.classList.add('hidden');
+          lockScreen.style.setProperty('display', 'none', 'important');
+        }
         showToast('Portalen är upplåst!');
+        return false;
       } else {
         if (errorMsg) errorMsg.classList.remove('hidden');
         if (input) {
           input.value = '';
           input.focus();
         }
+        return false;
       }
     }
 
     function lockPortal() {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      sessionStorage.removeItem(AUTH_STORAGE_KEY);
-      document.getElementById('auth-lock-screen').classList.remove('hidden');
-      setTimeout(() => document.getElementById('portal-password-input')?.focus(), 100);
+      window._dhPortalUnlocked = false;
+      try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      } catch (e) {}
+      const lockScreen = document.getElementById('auth-lock-screen');
+      if (lockScreen) {
+        lockScreen.classList.remove('hidden');
+        lockScreen.style.removeProperty('display');
+        setTimeout(() => document.getElementById('portal-password-input')?.focus(), 100);
+      }
       showToast('Portalen har låsts.');
     }
 
@@ -6746,9 +6778,8 @@
                 <button type="button" onclick="downloadSavedDoc('${g.id}', 'word', ${i})" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 text-blue-500 text-xs font-bold"><i class="fa-solid fa-download"></i></button>
               </div>
             </div>
-          `)
-          ...
-          excels.map((x, i) => `
+          `),
+          ...excels.map((x, i) => `
             <div class="flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
               <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 truncate"><i class="fa-solid fa-file-excel mr-2"></i>${x.name}</span>
               <div class="flex gap-1.5">
