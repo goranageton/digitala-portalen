@@ -752,28 +752,28 @@
     </section>
 
     <!-- ==================== VY: LICENSSLUT (KONTROLL LAGER 81 MOT LÄKEMEDELSAUTOMATER) ==================== -->
-    <section id="view-licensslut" class="hidden space-y-6">
+    <section id="view-licensslut" class="hidden space-y-3">
       
       <!-- Rubrik & Huvudknappar -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-sm">
-        <div class="flex items-center gap-3.5">
-          <div class="w-12 h-12 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-600 dark:text-teal-400 flex items-center justify-center text-xl shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 px-4 py-3 rounded-2xl shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-600 dark:text-teal-400 flex items-center justify-center text-lg shadow-sm shrink-0">
             <i class="fa-solid fa-pills"></i>
           </div>
           <div>
-            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white leading-tight">Kontroll av Lager 81 mot Läkemedelsautomater</h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Kontroll av Lager 81 mot Läkemedelsautomater</h2>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">
               Filtrerar och kontrollerar endast artikelnr <span class="text-teal-600 dark:text-teal-400 font-mono font-bold">83322</span> &amp; <span class="text-teal-600 dark:text-teal-400 font-mono font-bold">87613</span> mot Lager 81
             </p>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          <button type="button" onclick="clearLicensslutData()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition flex items-center gap-1.5 shadow-sm">
+          <button type="button" onclick="clearLicensslutData()" class="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition flex items-center gap-1.5 shadow-sm">
             <i class="fa-solid fa-trash-can"></i>
             <span>Rensa all info</span>
           </button>
-          <button type="button" onclick="exportLicensslutToExcel()" class="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-teal-600 hover:bg-teal-500 border border-teal-500/30 transition flex items-center gap-1.5 shadow-sm shadow-teal-900/30">
+          <button type="button" onclick="exportLicensslutToExcel()" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold text-white bg-teal-600 hover:bg-teal-500 border border-teal-500/30 transition flex items-center gap-1.5 shadow-sm shadow-teal-900/30">
             <i class="fa-solid fa-download"></i>
             <span>Exportera Rapport (.xlsx)</span>
           </button>
@@ -781,35 +781,30 @@
       </div>
 
       <!-- Uppladdningskort (2 kolumner: Lager 81 & Läkemedelsautomater) -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         
         <!-- Fil 1: Lager 81 -->
-        <div id="licensslutDropZone1" class="drop-zone bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-800 p-5 shadow-sm hover:border-teal-500/60 relative flex flex-col justify-between transition">
-          <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30">
-                Steg 1 • Basfil (Lager 81)
-              </span>
-              <span id="licensslutFile1CountBadge" class="text-xs font-semibold text-slate-500 dark:text-slate-400">0 rader (Artnr 83322 &amp; 87613)</span>
-            </div>
-            <div class="flex items-start gap-3.5">
-              <div class="w-11 h-11 rounded-2xl bg-blue-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 text-lg shadow-sm">
+        <div id="licensslutDropZone1" class="drop-zone bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 p-3.5 shadow-sm hover:border-teal-500/60 relative flex flex-col justify-between transition">
+          <div class="flex items-center justify-between mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30">
+              Steg 1 • Basfil (Lager 81)
+            </span>
+            <span id="licensslutFile1CountBadge" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">0 rader (Artnr 83322 &amp; 87613)</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <div class="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 text-sm shadow-sm">
                 <i class="fa-solid fa-database"></i>
               </div>
-              <div class="flex-1 min-w-0">
-                <h3 class="text-base font-extrabold text-slate-900 dark:text-slate-100">Lager 81</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Visar och matchar endast rader med artikelnummer <strong class="text-slate-800 dark:text-slate-200 font-mono">83322</strong> och <strong class="text-slate-800 dark:text-slate-200 font-mono">87613</strong>.</p>
-                <div id="licensslutFile1Status" class="mt-2.5 flex items-center text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
-                  <i class="fa-solid fa-file text-slate-400 mr-2 shrink-0"></i>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-slate-100 leading-tight">Lager 81</h3>
+                <div id="licensslutFile1Status" class="mt-1 flex items-center text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1">
+                  <i class="fa-solid fa-file text-slate-400 mr-1.5 shrink-0"></i>
                   <span class="truncate" id="licensslutFile1Name">Ingen fil inläst</span>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <span class="text-xs text-slate-500">Släpp .xlsx / .xls / .csv här eller välj fil</span>
-            <label class="cursor-pointer inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
+            <label class="cursor-pointer shrink-0 inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
               <i class="fa-solid fa-upload mr-1.5"></i>
               <span>Välj ny fil</span>
               <input type="file" id="licensslutFileInput1" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleLicensslutFileUpload(event, 1)">
@@ -818,32 +813,27 @@
         </div>
 
         <!-- Fil 2: Licensslut för läkemedelsautomater -->
-        <div id="licensslutDropZone2" class="drop-zone bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-800 p-5 shadow-sm hover:border-teal-500/60 relative flex flex-col justify-between transition">
-          <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
-                Steg 2 • Kontrollfil (Automater)
-              </span>
-              <span id="licensslutFile2CountBadge" class="text-xs font-semibold text-slate-500 dark:text-slate-400">0 rader</span>
-            </div>
-            <div class="flex items-start gap-3.5">
-              <div class="w-11 h-11 rounded-2xl bg-purple-500/15 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 text-lg shadow-sm">
+        <div id="licensslutDropZone2" class="drop-zone bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 p-3.5 shadow-sm hover:border-teal-500/60 relative flex flex-col justify-between transition">
+          <div class="flex items-center justify-between mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
+              Steg 2 • Kontrollfil (Automater)
+            </span>
+            <span id="licensslutFile2CountBadge" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">0 rader</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <div class="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 text-sm shadow-sm">
                 <i class="fa-solid fa-microchip"></i>
               </div>
-              <div class="flex-1 min-w-0">
-                <h3 class="text-base font-extrabold text-slate-900 dark:text-slate-100">Licensslut för läkemedelsautomater</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Filen från läkemedelsautomater som kontrolleras mot Lager 81.</p>
-                <div id="licensslutFile2Status" class="mt-2.5 flex items-center text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
-                  <i class="fa-solid fa-file text-slate-400 mr-2 shrink-0"></i>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-slate-100 leading-tight">Licensslut för läkemedelsautomater</h3>
+                <div id="licensslutFile2Status" class="mt-1 flex items-center text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1">
+                  <i class="fa-solid fa-file text-slate-400 mr-1.5 shrink-0"></i>
                   <span class="truncate" id="licensslutFile2Name">Ingen fil inläst</span>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <span class="text-xs text-slate-500">Släpp .xlsx / .xls / .csv här eller välj fil</span>
-            <label class="cursor-pointer inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-purple-600 hover:text-white text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
+            <label class="cursor-pointer shrink-0 inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-purple-600 hover:text-white text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
               <i class="fa-solid fa-upload mr-1.5"></i>
               <span>Välj ny fil</span>
               <input type="file" id="licensslutFileInput2" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleLicensslutFileUpload(event, 2)">
@@ -854,57 +844,57 @@
       </div>
 
       <!-- KPI Sammanfattningskort (4 st) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <!-- Rader i Automater -->
-        <div onclick="setLicensslutTab('all_auto')" class="cursor-pointer bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-teal-500 transition flex items-center justify-between">
+        <div onclick="setLicensslutTab('all_auto')" class="cursor-pointer bg-white dark:bg-slate-900 px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-teal-500 transition flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rader i Automater</p>
-            <p id="licensslutStatTotalAuto" class="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">0</p>
-            <p class="text-xs text-slate-400 mt-1">Kontrollerade rader</p>
+            <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rader i Automater</p>
+            <p id="licensslutStatTotalAuto" class="text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5">0</p>
+            <p class="text-[11px] text-slate-400">Kontrollerade rader</p>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-lg">
+          <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-sm shrink-0">
             <i class="fa-solid fa-list-check"></i>
           </div>
         </div>
 
         <!-- Matched (Finns i Lager 81) -->
-        <div onclick="setLicensslutTab('matched')" class="cursor-pointer bg-white dark:bg-slate-900 p-4 rounded-3xl border border-emerald-500/30 shadow-sm hover:border-emerald-500 transition flex items-center justify-between">
+        <div onclick="setLicensslutTab('matched')" class="cursor-pointer bg-white dark:bg-slate-900 px-3.5 py-2.5 rounded-2xl border border-emerald-500/30 shadow-sm hover:border-emerald-500 transition flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Finns i Lager 81</p>
-            <div class="flex items-baseline gap-2 mt-1">
-              <p id="licensslutStatMatched" class="text-2xl font-black text-emerald-600 dark:text-emerald-400">0</p>
-              <span id="licensslutStatMatchedPercent" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/20 px-2 py-0.5 rounded-full">0%</span>
+            <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Finns i Lager 81</p>
+            <div class="flex items-baseline gap-1.5 mt-0.5">
+              <p id="licensslutStatMatched" class="text-xl font-black text-emerald-600 dark:text-emerald-400">0</p>
+              <span id="licensslutStatMatchedPercent" class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/20 px-1.5 py-0.2 rounded-full">0%</span>
             </div>
-            <p class="text-xs text-slate-400 mt-1">Träff i Lager 81</p>
+            <p class="text-[11px] text-slate-400">Träff i Lager 81</p>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm shrink-0">
             <i class="fa-solid fa-check-double"></i>
           </div>
         </div>
 
         <!-- Missing (Saknas i Lager 81) -->
-        <div onclick="setLicensslutTab('unmatched')" class="cursor-pointer bg-white dark:bg-slate-900 p-4 rounded-3xl border border-amber-500/30 shadow-sm hover:border-amber-500 transition flex items-center justify-between">
+        <div onclick="setLicensslutTab('unmatched')" class="cursor-pointer bg-white dark:bg-slate-900 px-3.5 py-2.5 rounded-2xl border border-amber-500/30 shadow-sm hover:border-amber-500 transition flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Saknas i Lager 81</p>
-            <div class="flex items-baseline gap-2 mt-1">
-              <p id="licensslutStatUnmatched" class="text-2xl font-black text-amber-600 dark:text-amber-400">0</p>
-              <span id="licensslutStatUnmatchedPercent" class="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/20 px-2 py-0.5 rounded-full">0%</span>
+            <p class="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Saknas i Lager 81</p>
+            <div class="flex items-baseline gap-1.5 mt-0.5">
+              <p id="licensslutStatUnmatched" class="text-xl font-black text-amber-600 dark:text-amber-400">0</p>
+              <span id="licensslutStatUnmatchedPercent" class="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/20 px-1.5 py-0.2 rounded-full">0%</span>
             </div>
-            <p class="text-xs text-slate-400 mt-1">Finns i automat men ej i Lager 81</p>
+            <p class="text-[11px] text-slate-400">Finns i automat men ej i Lager 81</p>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm shrink-0">
             <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
         </div>
 
         <!-- Master Total (Lager 81) -->
-        <div onclick="setLicensslutTab('master')" class="cursor-pointer bg-white dark:bg-slate-900 p-4 rounded-3xl border border-blue-500/30 shadow-sm hover:border-blue-500 transition flex items-center justify-between">
+        <div onclick="setLicensslutTab('master')" class="cursor-pointer bg-white dark:bg-slate-900 px-3.5 py-2.5 rounded-2xl border border-blue-500/30 shadow-sm hover:border-blue-500 transition flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Lager 81 (83322 &amp; 87613)</p>
-            <p id="licensslutStatTotalMaster" class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">0</p>
-            <p id="licensslutStatUniqueMasterIds" class="text-xs text-slate-400 mt-1">Endast artnr 83322 &amp; 87613</p>
+            <p class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Lager 81 (83322 &amp; 87613)</p>
+            <p id="licensslutStatTotalMaster" class="text-xl font-black text-blue-600 dark:text-blue-400 mt-0.5">0</p>
+            <p id="licensslutStatUniqueMasterIds" class="text-[11px] text-slate-400">Endast artnr 83322 &amp; 87613</p>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg">
+          <div class="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm shrink-0">
             <i class="fa-solid fa-layer-group"></i>
           </div>
         </div>
@@ -4196,17 +4186,61 @@
         .replace(/'/g, "&#039;");
     }
 
+    function cleanLicensslutText(val) {
+      if (val === null || val === undefined) return "";
+      if (val instanceof Date) {
+        if (isNaN(val.getTime())) return "";
+        const y = val.getFullYear();
+        const m = String(val.getMonth() + 1).padStart(2, '0');
+        const d = String(val.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+      let s = decodeHtmlEntities(String(val).trim());
+      // Ta bort råa JS Date-strängar t.ex. "(Wed Nov 15 2023 00:00:00 GMT+0100 (Central European Standard Time))"
+      s = s.replace(/\s*\((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+\d{4}[^)]*(?:\([^)]*\)[^)]*)?\)/gi, '');
+      s = s.replace(/\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+\d{4}\s+\d{2}:\d{2}:\d{2}\s+GMT[+-]\d{4}(?:\s*\([^)]*\))?/gi, '');
+      return s.replace(/\s{2,}/g, ' ').trim();
+    }
+
+    function sanitizeAutomaterRow(row) {
+      if (!row || typeof row !== 'object') return { serienr: '-', individnr: '-', artnr: '-', benamning: 'Läkemedelsautomat' };
+      let serienr = cleanLicensslutText(row.serienr) || "-";
+      let individnr = cleanLicensslutText(row.individnr) || "-";
+      let rawArtnr = cleanLicensslutText(row.artnr);
+      let benamning = cleanLicensslutText(row.benamning);
+
+      // Om artnr råkat få artikelbenämningen (t.ex. "Läkemedelsautomat Evondos E300...") istället för ett riktigt artikelnr (83322/87613)
+      let validArtnr = extractAllowedArtnr(rawArtnr);
+      if (!validArtnr && rawArtnr && rawArtnr !== '-') {
+        if (!benamning || benamning === '-' || benamning === 'Läkemedelsautomat') {
+          benamning = rawArtnr;
+        }
+      }
+      if (!validArtnr) {
+        validArtnr = extractAllowedArtnr(benamning) || "-";
+      }
+
+      return {
+        serienr: serienr || "-",
+        individnr: individnr || "-",
+        artnr: validArtnr || "-",
+        benamning: benamning || "Läkemedelsautomat"
+      };
+    }
+
     function runLicensslutComparison() {
       ensureInventoryStruct();
       const lic = state.inventory.licensslut;
       let masterData = lic.masterData || [];
-      const automaterData = lic.automaterData || [];
+      let automaterData = (lic.automaterData || []).map(sanitizeAutomaterRow);
+      lic.automaterData = automaterData;
 
       // 1. Säkerställ att masterData (Lager 81) ENDAST innehåller artnr 83322 och 87613
       masterData = masterData.filter(item => {
         const foundArtnr = extractAllowedArtnr(item.artnr) || extractAllowedArtnr(item.benamning) || extractAllowedArtnr(item.rawRow);
         if (foundArtnr) {
           item.artnr = foundArtnr;
+          item.benamning = cleanLicensslutText(item.benamning) || (foundArtnr === '83322' ? 'Evondos E300' : 'Evondos Anna');
           return true;
         }
         return false;
@@ -4260,8 +4294,8 @@
           index: idx + 1,
           serienr: row.serienr || "-",
           individnr: row.individnr || "-",
-          artnr: row.artnr && row.artnr !== '-' ? row.artnr : (matches[0] ? matches[0].artnr : "-"),
-          benamning: decodeHtmlEntities(row.benamning || "-"),
+          artnr: matches[0] ? matches[0].artnr : (row.artnr && row.artnr !== '-' ? row.artnr : "-"),
+          benamning: cleanLicensslutText(row.benamning || "-"),
           found: matches.length > 0,
           matchCount: matches.length,
           matchMethod: matchMethod,
@@ -4433,13 +4467,13 @@
       // Rendera jämförelsetabellen
       thead.innerHTML = `
         <tr>
-          <th class="py-3 px-4 font-bold">Status i Lager 81</th>
-          <th class="py-3 px-4 font-bold">Serienummer (PP / TT)</th>
-          <th class="py-3 px-4 font-bold">Individnummer</th>
-          <th class="py-3 px-4 font-bold">Artnr (Lager 81)</th>
-          <th class="py-3 px-4 font-bold">Artikel i Läkemedelsautomat</th>
-          <th class="py-3 px-4 font-bold">Matchad info från Lager 81</th>
-          <th class="py-3 px-4 font-bold text-right">Detaljer</th>
+          <th class="py-2.5 px-3 font-bold whitespace-nowrap">Status i Lager 81</th>
+          <th class="py-2.5 px-3 font-bold whitespace-nowrap">Serienummer (PP / TT)</th>
+          <th class="py-2.5 px-3 font-bold whitespace-nowrap">Individnummer</th>
+          <th class="py-2.5 px-3 font-bold whitespace-nowrap">Artnr (Lager 81)</th>
+          <th class="py-2.5 px-3 font-bold">Artikel i Läkemedelsautomat</th>
+          <th class="py-2.5 px-3 font-bold whitespace-nowrap">Matchad info från Lager 81</th>
+          <th class="py-2.5 px-3 font-bold text-right whitespace-nowrap">Detaljer</th>
         </tr>
       `;
 
@@ -4461,19 +4495,19 @@
 
       tbody.innerHTML = filtered.map(row => {
         const statusBadge = row.found
-          ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+          ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
               Individen finns på lager 81
              </span>`
-          : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+          : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
               <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>
               Saknas på lager 81
              </span>`;
 
-        const matchedArtnr = row.found ? row.matches[0].artnr : row.artnr;
+        const matchedArtnr = row.found ? row.matches[0].artnr : (ALLOWED_LICENSSLUT_ARTNR.includes(String(row.artnr)) ? row.artnr : '-');
         const matchedArtnrBadge = (matchedArtnr && matchedArtnr !== '-')
-          ? `<span class="bg-teal-500/15 border border-teal-500/30 text-teal-700 dark:text-teal-300 px-2.5 py-1 rounded-md font-mono text-xs font-bold">${escapeHtml(matchedArtnr)}</span>`
-          : `<span class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 px-2 py-1 rounded-md font-mono text-xs">-</span>`;
+          ? `<span class="bg-teal-500/15 border border-teal-500/30 text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded-md font-mono text-xs font-bold">${escapeHtml(matchedArtnr)}</span>`
+          : `<span class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 px-2 py-0.5 rounded-md font-mono text-xs">-</span>`;
 
         const matchSummaryHtml = row.found
           ? `<span class="text-xs font-bold text-emerald-600 dark:text-emerald-300">Individen finns på lager 81</span>`
@@ -4481,36 +4515,36 @@
 
         return `
           <tr onclick="openLicensslutRowModal(${row.index - 1})" class="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition cursor-pointer">
-            <td class="py-3 px-4 whitespace-nowrap">${statusBadge}</td>
-            <td class="py-3 px-4 whitespace-nowrap">
-              <div class="inline-flex items-center gap-1.5">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+            <td class="py-2.5 px-3 whitespace-nowrap">${statusBadge}</td>
+            <td class="py-2.5 px-3 whitespace-nowrap">
+              <div class="inline-flex items-center gap-1">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-mono font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
                   ${escapeHtml(row.serienr)}
                 </span>
                 ${row.serienr && row.serienr !== '-' ? `
                 <button type="button" onclick="copyLicensslutValue(event, '${escapeHtml(row.serienr)}', 'Serienummer')" title="Kopiera serienummer" class="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 border border-slate-200 dark:border-slate-700 transition">
-                  <i class="fa-solid fa-copy text-xs"></i>
+                  <i class="fa-solid fa-copy text-[11px]"></i>
                 </button>` : ''}
               </div>
             </td>
-            <td class="py-3 px-4 whitespace-nowrap">
-              <div class="inline-flex items-center gap-1.5">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+            <td class="py-2.5 px-3 whitespace-nowrap">
+              <div class="inline-flex items-center gap-1">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                   ${escapeHtml(row.individnr)}
                 </span>
                 ${row.individnr && row.individnr !== '-' ? `
                 <button type="button" onclick="copyLicensslutValue(event, '${escapeHtml(row.individnr)}', 'Individnummer')" title="Kopiera individnummer" class="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-teal-500/20 text-slate-400 hover:text-teal-400 border border-slate-200 dark:border-slate-700 transition">
-                  <i class="fa-solid fa-copy text-xs"></i>
+                  <i class="fa-solid fa-copy text-[11px]"></i>
                 </button>` : ''}
               </div>
             </td>
-            <td class="py-3 px-4 whitespace-nowrap">${matchedArtnrBadge}</td>
-            <td class="py-3 px-4">
-              <div class="font-medium text-slate-800 dark:text-slate-100">${escapeHtml(row.benamning)}</div>
+            <td class="py-2.5 px-3 whitespace-nowrap">${matchedArtnrBadge}</td>
+            <td class="py-2.5 px-3">
+              <div class="text-xs font-medium text-slate-800 dark:text-slate-100 leading-snug">${escapeHtml(row.benamning)}</div>
             </td>
-            <td class="py-3 px-4 whitespace-nowrap">${matchSummaryHtml}</td>
-            <td class="py-3 px-4 text-right whitespace-nowrap">
-              <button type="button" onclick="openLicensslutRowModal(${row.index - 1}); event.stopPropagation();" class="text-xs font-bold text-teal-700 dark:text-teal-300 hover:text-white bg-teal-500/15 hover:bg-teal-600 border border-teal-500/30 px-2.5 py-1.5 rounded-xl transition shadow-sm">
+            <td class="py-2.5 px-3 whitespace-nowrap">${matchSummaryHtml}</td>
+            <td class="py-2.5 px-3 text-right whitespace-nowrap">
+              <button type="button" onclick="openLicensslutRowModal(${row.index - 1}); event.stopPropagation();" class="text-xs font-bold text-teal-700 dark:text-teal-300 hover:text-white bg-teal-500/15 hover:bg-teal-600 border border-teal-500/30 px-2.5 py-1 rounded-xl transition shadow-sm">
                 Visa kort
               </button>
             </td>
@@ -4823,7 +4857,7 @@
 
       // 1. Identifiera rubrikrad i de första 40 raderna
       let headerRowIdx = -1;
-      let colMap = { serial: -1, individ: -1, artnr: -1, benamning: -1, extra: -1 };
+      let colMap = { serial: -1, individ: -1, artnr: -1, benamning: -1 };
 
       for (let i = 0; i < Math.min(40, rows.length); i++) {
         const r = rows[i];
@@ -4832,13 +4866,12 @@
 
         const sIdx = cleanCells.findIndex(c => /serie|serial|s\/n|sn|enhetsnr|enhetsid|apparat|device|barcode/i.test(c));
         const indIdx = cleanCells.findIndex(c => /individ|inv|anlaggning|objekt/i.test(c));
-        const artIdx = cleanCells.findIndex(c => /artikelnr|artikel|art\.nr|produktkod/i.test(c));
-        const benIdx = cleanCells.findIndex(c => /benamning|modell|beskrivning|namn|enhetstyp/i.test(c));
-        const extIdx = cleanCells.findIndex(c => /licens|slutdatum|utgar|datum|status|kund|organisation/i.test(c));
+        const artIdx = cleanCells.findIndex(c => /artikelnr|art\.nr|produktkod/i.test(c));
+        const benIdx = cleanCells.findIndex(c => /^artikel$|benamning|modell|beskrivning|namn|enhetstyp/i.test(c));
 
         if (sIdx !== -1 || indIdx !== -1 || (artIdx !== -1 && benIdx !== -1)) {
           headerRowIdx = i;
-          colMap = { serial: sIdx, individ: indIdx, artnr: artIdx, benamning: benIdx, extra: extIdx };
+          colMap = { serial: sIdx, individ: indIdx, artnr: artIdx, benamning: benIdx };
           break;
         }
       }
@@ -4849,7 +4882,7 @@
       for (let r = startRow; r < rows.length; r++) {
         const row = rows[r];
         if (!Array.isArray(row) || row.every(c => c === null || c === undefined || String(c).trim() === '')) continue;
-        const cleanCols = row.map(c => decodeHtmlEntities(String(c || "").trim()));
+        const cleanCols = row.map(c => cleanLicensslutText(c));
         const joined = cleanCols.join(" ").trim();
         if (!joined) continue;
 
@@ -4861,11 +4894,8 @@
         if (headerRowIdx !== -1) {
           if (colMap.serial !== -1) serienr = cleanCols[colMap.serial] || "";
           if (colMap.individ !== -1) individnr = cleanCols[colMap.individ] || "";
-          if (colMap.artnr !== -1) artnr = cleanCols[colMap.artnr] || "";
+          if (colMap.artnr !== -1) artnr = extractAllowedArtnr(cleanCols[colMap.artnr]) || "";
           if (colMap.benamning !== -1) benamning = cleanCols[colMap.benamning] || "";
-          if (colMap.extra !== -1 && cleanCols[colMap.extra]) {
-            benamning = benamning ? `${benamning} (${cleanCols[colMap.extra]})` : cleanCols[colMap.extra];
-          }
         }
 
         // Fallbacks för serienummer
@@ -4874,7 +4904,6 @@
           if (ppMatch) {
             serienr = ppMatch;
           } else {
-            // Leta efter cell som ser ut som ett serienummer
             for (const c of cleanCols) {
               if (/^(?:PP|TT|[A-Z]{1,4})[0-9\-]+$/i.test(c) || /^(?:E300|ANNA|EV|DOS)[0-9\-]+$/i.test(c)) {
                 serienr = c;
@@ -4900,6 +4929,7 @@
             c.length > 4 &&
             !c.toLowerCase().includes("licensslut för") &&
             !c.toLowerCase().includes("individen finns") &&
+            !/^\d{4}-\d{2}-\d{2}/.test(c) &&
             c !== serienr &&
             c !== individnr &&
             c !== artnr
@@ -4916,12 +4946,12 @@
 
         if (!serienr && !individnr) continue;
 
-        parsed.push({
+        parsed.push(sanitizeAutomaterRow({
           serienr: serienr || "-",
           individnr: individnr || "-",
           artnr: artnr || "-",
           benamning: benamning || "Läkemedelsautomat"
-        });
+        }));
       }
 
       return parsed;
