@@ -4252,6 +4252,16 @@
         validArtnr = extractAllowedArtnr(benamning) || "-";
       }
 
+      // Serienummerkoppling: PP -> 83322, TT -> 87613
+      if ((!validArtnr || validArtnr === '-') && serienr && serienr !== '-') {
+        if (/^PP/i.test(serienr)) validArtnr = "83322";
+        else if (/^TT/i.test(serienr)) validArtnr = "87613";
+      }
+
+      if (validArtnr && validArtnr !== '-' && (!benamning || benamning === '-' || benamning === 'Läkemedelsautomat')) {
+        benamning = validArtnr === '83322' ? 'Läkemedelsautomat Evondos E300 med administrationstjänst' : 'Läkemedelsautomat Evondos Anna med administrationstjänst';
+      }
+
       return {
         serienr: serienr || "-",
         individnr: individnr || "-",
@@ -4369,17 +4379,17 @@
       setTxt('licensslutFile1CountBadge', `${masterCount} rader (Artnr 83322 & 87613)`);
       setTxt('licensslutFile2CountBadge', `${autoCount} rader`);
 
-      // Antalsfördelning per artikelnr (83322 & 87613) för Lager 81
+      // Antalsfördelning per artikelnr (PP -> 83322, TT -> 87613) för Lager 81
       const masterRows = lic.masterData || [];
-      const m83322 = masterRows.filter(r => (r.artnr === '83322' || extractAllowedArtnr(r.artnr) === '83322' || extractAllowedArtnr(r.benamning) === '83322')).length;
-      const m87613 = masterRows.filter(r => (r.artnr === '87613' || extractAllowedArtnr(r.artnr) === '87613' || extractAllowedArtnr(r.benamning) === '87613')).length;
+      const m83322 = masterRows.filter(r => (r.artnr === '83322' || /^PP/i.test(r.serienr) || extractAllowedArtnr(r.artnr) === '83322' || extractAllowedArtnr(r.benamning) === '83322')).length;
+      const m87613 = masterRows.filter(r => (r.artnr === '87613' || /^TT/i.test(r.serienr) || extractAllowedArtnr(r.artnr) === '87613' || extractAllowedArtnr(r.benamning) === '87613')).length;
 
-      // Antalsfördelning per artikelnr (83322 & 87613) för Automater
+      // Antalsfördelning per artikelnr (PP -> 83322, TT -> 87613) för Automater
       const autoRows = (licensslutComparisonResults && licensslutComparisonResults.length > 0)
         ? licensslutComparisonResults
         : (lic.automaterData || []);
-      const a83322 = autoRows.filter(r => (r.artnr === '83322' || extractAllowedArtnr(r.artnr) === '83322' || extractAllowedArtnr(r.benamning) === '83322')).length;
-      const a87613 = autoRows.filter(r => (r.artnr === '87613' || extractAllowedArtnr(r.artnr) === '87613' || extractAllowedArtnr(r.benamning) === '87613')).length;
+      const a83322 = autoRows.filter(r => (r.artnr === '83322' || /^PP/i.test(r.serienr) || extractAllowedArtnr(r.artnr) === '83322' || extractAllowedArtnr(r.benamning) === '83322')).length;
+      const a87613 = autoRows.filter(r => (r.artnr === '87613' || /^TT/i.test(r.serienr) || extractAllowedArtnr(r.artnr) === '87613' || extractAllowedArtnr(r.benamning) === '87613')).length;
 
       // Fördelningsbrickor i filkorten
       setTxt('licensslutFile1StatTotal', masterCount);
@@ -4897,11 +4907,15 @@
         const joined = cleanCols.join(" ").trim();
         if (!joined) continue;
 
-        // Krav: Endast rader med artikelnummer 83322 eller 87613
-        const matchedArtnr = extractAllowedArtnr(joined);
+        // Krav: Endast rader med artikelnummer 83322 eller 87613 (eller serienummer som börjar på PP/TT)
+        const serienr = extractSerialPPorTT(joined);
+        let matchedArtnr = extractAllowedArtnr(joined);
+        if (!matchedArtnr && serienr) {
+          if (/^PP/i.test(serienr)) matchedArtnr = "83322";
+          else if (/^TT/i.test(serienr)) matchedArtnr = "87613";
+        }
         if (!matchedArtnr) continue;
 
-        const serienr = extractSerialPPorTT(joined);
         const individnr = extractIndividId(joined);
 
         // Ignorera rena rubrikrader som saknar både serienummer och individnummer
@@ -4994,9 +5008,15 @@
           individnr = extractIndividId(joined);
         }
 
-        // Fallbacks för artikelnummer
+        // Fallbacks för artikelnummer: PP -> 83322, TT -> 87613
         if (!artnr) {
-          artnr = extractAllowedArtnr(joined);
+          if (/^PP/i.test(serienr)) {
+            artnr = "83322";
+          } else if (/^TT/i.test(serienr)) {
+            artnr = "87613";
+          } else {
+            artnr = extractAllowedArtnr(joined);
+          }
         }
 
         // Fallbacks för benämning
