@@ -1124,6 +1124,10 @@ body.colorblind-on .cb-symbol {
   align-items: center;
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .character-wrap:hover,
@@ -1140,9 +1144,10 @@ body.colorblind-on .cb-symbol {
 .baltazar-svg {
   width: 82px;
   height: 112px;
-  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.5));
   animation: characterPace 4.5s infinite ease-in-out;
   transform-origin: 50% 90%;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 @keyframes characterPace {
@@ -1167,6 +1172,13 @@ body.colorblind-on .cb-symbol {
   box-shadow: 0 4px 10px rgba(250, 204, 21, 0.4);
   animation: ahaFloat 1.8s infinite ease-in-out;
   margin-bottom: 2px;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+@keyframes ahaFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
 }
 
 .music-pill-btn,
@@ -2093,10 +2105,13 @@ body.colorblind-on .cb-symbol {
 .character-svg.goran-svg {
   width: 106px;
   height: 136px;
-  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.55));
   animation: goranIdleWalk 3.6s infinite ease-in-out;
   transform-origin: 50% 92%;
   overflow: visible;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 @keyframes goranIdleWalk {
@@ -2107,8 +2122,11 @@ body.colorblind-on .cb-symbol {
 }
 
 .goran-head-group {
+  transform-box: view-box;
   transform-origin: 90px 98px;
   animation: goranHeadNod 2.8s infinite ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @keyframes goranHeadNod {
@@ -2118,8 +2136,11 @@ body.colorblind-on .cb-symbol {
 
 /* Expressive Eyebrows */
 .goran-brows {
+  transform-box: view-box;
   transform-origin: 90px 44px;
   animation: goranBrowsWiggle 4s infinite ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @keyframes goranBrowsWiggle {
@@ -2129,21 +2150,24 @@ body.colorblind-on .cb-symbol {
   94% { transform: translateY(-3.5px); }
 }
 
-/* Blinking Eyelids */
+/* Blinking Eyelids - Flicker-free opacity blink */
 .goran-eyelid {
-  transform-origin: center;
-  transform: scaleY(0);
-  animation: goranBlink 4.2s infinite ease-in-out;
+  opacity: 0;
+  pointer-events: none;
+  animation: goranBlink 4.5s infinite;
 }
 
 @keyframes goranBlink {
-  0%, 44%, 48%, 92%, 96%, 100% { transform: scaleY(0); }
-  46%, 94% { transform: scaleY(1); }
+  0%, 43%, 47%, 91%, 95%, 100% { opacity: 0; }
+  45%, 93% { opacity: 1; }
 }
 
 /* Curious Eye Glancing */
 .goran-pupils {
+  transform-box: view-box;
   animation: goranEyeLook 5.5s infinite ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @keyframes goranEyeLook {
@@ -2154,8 +2178,11 @@ body.colorblind-on .cb-symbol {
 
 /* Waving Arms & Bubbling Flask */
 .goran-arm-left {
+  transform-box: view-box;
   transform-origin: 52px 120px;
   animation: goranLeftWave 2.6s infinite ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @keyframes goranLeftWave {
@@ -2164,8 +2191,11 @@ body.colorblind-on .cb-symbol {
 }
 
 .goran-arm-right {
+  transform-box: view-box;
   transform-origin: 128px 120px;
   animation: goranRightSwirl 2.2s infinite ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @keyframes goranRightSwirl {
