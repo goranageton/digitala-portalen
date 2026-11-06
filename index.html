@@ -245,19 +245,40 @@
 
     <!-- ==================== VY 2: LATHUNDAR & GUIDER ==================== -->
     <section id="view-guides" class="hidden space-y-6">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800/90 p-5 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80">
-        <div class="relative flex-1">
-          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input id="guide-search" type="text" oninput="renderGuides()" placeholder="Sök i lathundar, steg-för-steg instruktioner eller dokumentnamn..." class="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
-        </div>
-        <button type="button" onclick="openGuideModal()" class="px-5 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2 transition shrink-0">
-          <i class="fa-solid fa-plus"></i>
-          <span>Skapa ny lathund</span>
-        </button>
-      </div>
+      <div class="bg-white dark:bg-slate-800/90 p-5 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <!-- Kategori-dropdown (vertikal lista) som i exemplet -->
+          <div class="w-full md:w-72">
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="guide-category-filter" class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Kategori</label>
+              <button type="button" onclick="openCategoryModal()" class="text-[11px] font-bold text-brand-500 hover:text-brand-400 flex items-center gap-1 transition" title="Lägg till eller ta bort kategorier">
+                <i class="fa-solid fa-tags"></i>
+                <span>Hantera kategorier</span>
+              </button>
+            </div>
+            <select id="guide-category-filter" onchange="setGuideCategory(this.value)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer">
+              <!-- Fylls med Alla kategorier och alla kategorier från state -->
+            </select>
+          </div>
 
-      <!-- Kategorifilter för lathundar -->
-      <div id="guide-category-pills" class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar"></div>
+          <!-- Sökfält -->
+          <div class="relative flex-1">
+            <label for="guide-search" class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Sök lathund</label>
+            <div class="relative">
+              <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input id="guide-search" type="text" oninput="renderGuides()" placeholder="Sök i lathundar, steg-för-steg instruktioner eller dokumentnamn..." class="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+          </div>
+
+          <!-- Skapa ny lathund-knapp -->
+          <div class="self-stretch md:self-end">
+            <button type="button" onclick="openGuideModal()" class="w-full md:w-auto px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2 transition shrink-0 h-[42px]">
+              <i class="fa-solid fa-plus"></i>
+              <span>Skapa ny lathund</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Kort-grid för lathundar -->
       <div id="guides-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
@@ -6080,7 +6101,19 @@
 
     // ==================== KATEGORIER ====================
     function renderCategoryPills() {
-      const allCats = ['Alla', ...state.categories];
+      const uniqueCats = new Set(state.categories);
+      (state.guides || []).forEach(g => {
+        if (g.category && g.category.trim()) uniqueCats.add(g.category.trim());
+      });
+      const allCats = ['Alla', ...Array.from(uniqueCats)];
+
+      const guideFilterSelect = document.getElementById('guide-category-filter');
+      if (guideFilterSelect) {
+        guideFilterSelect.innerHTML = allCats.map(c => `
+          <option value="${c}" ${activeGuideCategory === c ? 'selected' : ''}>${c === 'Alla' ? 'Alla kategorier' : c}</option>
+        `).join('');
+        guideFilterSelect.value = activeGuideCategory;
+      }
 
       const guidePills = document.getElementById('guide-category-pills');
       if (guidePills) {
@@ -6102,6 +6135,10 @@
 
     function setGuideCategory(cat) {
       activeGuideCategory = cat;
+      const guideFilterSelect = document.getElementById('guide-category-filter');
+      if (guideFilterSelect && guideFilterSelect.value !== cat) {
+        guideFilterSelect.value = cat;
+      }
       renderCategoryPills();
       renderGuides();
     }
