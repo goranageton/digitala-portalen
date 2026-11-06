@@ -1045,7 +1045,6 @@
     if (reactionPop) {
       const funPopups = [
         '🧪 Kung i labbet!',
-        '🔥 Chicago-style!',
         '💡 Genialiskt!',
         '🚀 Full kontroll!',
         '⚗️ Rätt kemi!',
