@@ -4166,6 +4166,38 @@
       return "";
     }
 
+    function getSerialMatchKeys(serial) {
+      if (!serial || serial === '-' || serial === '–') return [];
+      const s = String(serial).trim().toUpperCase();
+      const keys = new Set();
+      if (s) keys.add(s);
+      const clean = s.replace(/[^A-Z0-9]/g, '');
+      if (clean) keys.add(clean);
+      const noPrefix = clean.replace(/^(?:PP|TT)/, '');
+      if (noPrefix) {
+        keys.add(noPrefix);
+        const noZeros = noPrefix.replace(/^0+(?=\d)/, '');
+        if (noZeros.length >= 2) keys.add(noZeros);
+      }
+      const cleanNoZeros = clean.replace(/^0+(?=\d)/, '');
+      if (cleanNoZeros.length >= 2) keys.add(cleanNoZeros);
+      return Array.from(keys);
+    }
+
+    function getIndividMatchKeys(individ) {
+      if (!individ || individ === '-' || individ === '–') return [];
+      const s = String(individ).trim();
+      const keys = new Set();
+      if (s) keys.add(s);
+      const clean = s.replace(/[^0-9]/g, '');
+      if (clean) {
+        keys.add(clean);
+        const noZeros = clean.replace(/^0+(?=\d)/, '');
+        if (noZeros.length >= 3) keys.add(noZeros);
+      }
+      return Array.from(keys);
+    }
+
     function escapeHtml(str) {
       if (str === null || str === undefined) return "";
       return String(str)
@@ -4193,45 +4225,54 @@
       });
       lic.masterData = masterData;
 
-      // 2. Bygg uppslagsindex ENDAST på Serienummer (PP/TT) och Individnummer
+      // 2. Bygg flernyckel-index på Serienummer och Individnummer för 100% träffsäker matchning
       const masterBySerial = new Map();
       const masterByIndivid = new Map();
 
       masterData.forEach(item => {
-        const serial = (item.serienr || "").trim().toUpperCase();
-        const individ = (item.individnr || "").trim();
+        const sKeys = getSerialMatchKeys(item.serienr);
+        sKeys.forEach(k => {
+          if (!masterBySerial.has(k)) masterBySerial.set(k, []);
+          masterBySerial.get(k).push(item);
+        });
 
-        if (serial && serial !== '-') {
-          if (!masterBySerial.has(serial)) masterBySerial.set(serial, []);
-          masterBySerial.get(serial).push(item);
-        }
-        if (individ && individ !== '-') {
-          if (!masterByIndivid.has(individ)) masterByIndivid.set(individ, []);
-          masterByIndivid.get(individ).push(item);
-        }
+        const iKeys = getIndividMatchKeys(item.individnr);
+        iKeys.forEach(k => {
+          if (!masterByIndivid.has(k)) masterByIndivid.set(k, []);
+          masterByIndivid.get(k).push(item);
+        });
       });
 
-      // 3. Jämför varje rad i Läkemedelsautomater mot Lager 81 via Serienummer (PP/TT) eller Individnummer
+      // 3. Jämför varje rad i Läkemedelsautomater mot Lager 81
       licensslutComparisonResults = automaterData.map((row, idx) => {
-        const serial = (row.serienr || "").trim().toUpperCase();
-        const individ = (row.individnr || "").trim();
-
         let matches = [];
         let matchMethod = "";
 
-        if (serial && serial !== '-' && masterBySerial.has(serial)) {
-          matches = masterBySerial.get(serial);
-          matchMethod = `Serienummer (${serial})`;
-        } else if (individ && individ !== '-' && masterByIndivid.has(individ)) {
-          matches = masterByIndivid.get(individ);
-          matchMethod = `Individnummer (${individ})`;
+        const sKeys = getSerialMatchKeys(row.serienr);
+        for (const k of sKeys) {
+          if (masterBySerial.has(k)) {
+            matches = masterBySerial.get(k);
+            matchMethod = `Serienummer (${row.serienr})`;
+            break;
+          }
+        }
+
+        if (!matches.length) {
+          const iKeys = getIndividMatchKeys(row.individnr);
+          for (const k of iKeys) {
+            if (masterByIndivid.has(k)) {
+              matches = masterByIndivid.get(k);
+              matchMethod = `Individnummer (${row.individnr})`;
+              break;
+            }
+          }
         }
 
         return {
           index: idx + 1,
-          serienr: serial || "-",
-          individnr: individ || "-",
-          artnr: row.artnr || (matches[0] ? matches[0].artnr : "-"),
+          serienr: row.serienr || "-",
+          individnr: row.individnr || "-",
+          artnr: row.artnr && row.artnr !== '-' ? row.artnr : (matches[0] ? matches[0].artnr : "-"),
           benamning: decodeHtmlEntities(row.benamning || "-"),
           found: matches.length > 0,
           matchCount: matches.length,
@@ -4489,7 +4530,55 @@
         `;
       }).join('');
 
-      if (emptyState) emptyState.classList.toggle('hidden', filtered.length > 0);
+      if (emptyState) {
+        if (filtered.length > 0) {
+          emptyState.classList.add('hidden');
+        } else {
+          emptyState.classList.remove('hidden');
+          const autoTotal = (lic.automaterData || []).length;
+          const masterTotal = masterData.length;
+
+          if (autoTotal === 0 && masterTotal > 0) {
+            emptyState.innerHTML = `
+              <div class="py-6 px-4 text-center space-y-3 max-w-lg mx-auto">
+                <div class="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-xl shadow-sm">
+                  <i class="fa-solid fa-box-archive"></i>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900 dark:text-slate-100">${masterTotal} rader inlästa från Lager 81</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Basfilen för <strong>Lager 81</strong> är klar! Ladda upp kontrollfilen för <strong>Läkemedelsautomater i Steg 2</strong> ovan för att köra jämförelsen, eller klicka nedan för att visa alla rader i Lager 81 direkt.
+                </p>
+                <div class="pt-2">
+                  <button type="button" onclick="setLicensslutTab('master')" class="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-blue-600 hover:bg-blue-500 border border-blue-500/30 transition shadow-md inline-flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>Visa rader i Lager 81 (${masterTotal} st)</span>
+                  </button>
+                </div>
+              </div>
+            `;
+          } else if (autoTotal === 0 && masterTotal === 0) {
+            emptyState.innerHTML = `
+              <div class="py-8 text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400 mb-3 border border-slate-200 dark:border-slate-700 text-lg">
+                  <i class="fa-solid fa-inbox"></i>
+                </div>
+                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Inga rader att visa</h3>
+                <p class="text-xs text-slate-500 mt-1">Ladda upp nya Excel-filer för Lager 81 och Läkemedelsautomater ovan.</p>
+              </div>
+            `;
+          } else {
+            emptyState.innerHTML = `
+              <div class="py-8 text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400 mb-3 border border-slate-200 dark:border-slate-700 text-lg">
+                  <i class="fa-solid fa-filter"></i>
+                </div>
+                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Inga matchande rader</h3>
+                <p class="text-xs text-slate-500 mt-1">Inga rader matchar din sökning eller det valda filtret.</p>
+              </div>
+            `;
+          }
+        }
+      }
       if (countInfo) countInfo.textContent = `Visar ${filtered.length} av ${licensslutComparisonResults.length} rader från Läkemedelsautomater`;
     }
 
@@ -4658,29 +4747,50 @@
       reader.onload = async function(e) {
         try {
           const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-
-          if (fileNumber === 1) {
-            parseLicensslutMasterRows(rows, file.name);
-          } else {
-            parseLicensslutAutomaterRows(rows, file.name);
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true, raw: false });
+          
+          // Skanna alla blad och välj det blad som ger flest rader
+          let bestParsed = [];
+          for (const sheetName of workbook.SheetNames) {
+            const worksheet = workbook.Sheets[sheetName];
+            if (!worksheet) continue;
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+            const candidate = fileNumber === 1 
+              ? extractMasterRowsFromSheet(rows)
+              : extractAutomaterRowsFromSheet(rows);
+            if (candidate.length > bestParsed.length) {
+              bestParsed = candidate;
+            }
           }
+
+          ensureInventoryStruct();
+          if (fileNumber === 1) {
+            state.inventory.licensslut.masterData = bestParsed;
+            state.inventory.licensslut.file1Name = file.name;
+            // Om fil 2 saknas: växla automatiskt till Lager 81-fliken så användaren ser sina rader direkt!
+            if (!state.inventory.licensslut.automaterData || state.inventory.licensslut.automaterData.length === 0) {
+              setLicensslutTab('master');
+            }
+          } else {
+            state.inventory.licensslut.automaterData = bestParsed;
+            state.inventory.licensslut.file2Name = file.name;
+            // När automater laddas upp: visa jämförelsen direkt!
+            setLicensslutTab('all_auto');
+          }
+
           runLicensslutComparison();
           await syncInventoryToSupabase();
-          showToast(`Filen "${file.name}" har lästs in och sparats!`);
+          showToast(`Filen "${file.name}" har lästs in (${bestParsed.length} rader sparade)!`);
         } catch (err) {
-          console.error(err);
+          console.error("Fel vid inläsning av Licensslut Excel:", err);
           showToast("Kunde inte läsa Excel-filen. Kontrollera att det är en giltig .xlsx/.xls/.csv.");
         }
       };
       reader.readAsArrayBuffer(file);
     }
 
-    function parseLicensslutMasterRows(rows, fileName) {
-      ensureInventoryStruct();
+    function extractMasterRowsFromSheet(rows) {
+      if (!Array.isArray(rows) || !rows.length) return [];
       const parsed = [];
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
@@ -4699,7 +4809,6 @@
         // Ignorera rena rubrikrader som saknar både serienummer och individnummer
         if (!serienr && !individnr) continue;
 
-        // Hitta lämplig benämning
         const benamningCandidates = cleanCols.filter(c =>
           c.length > 5 &&
           !c.toLowerCase().includes("individen finns") &&
@@ -4707,7 +4816,7 @@
           c !== serienr &&
           c !== individnr
         );
-        const benamning = benamningCandidates.sort((a, b) => b.length - a.length)[0] || `Artikel ${matchedArtnr}`;
+        const benamning = benamningCandidates.sort((a, b) => b.length - a.length)[0] || (matchedArtnr === '83322' ? 'Evondos E300' : 'Evondos Anna');
 
         parsed.push({
           individnr: individnr || "-",
@@ -4718,47 +4827,116 @@
           rawRow: joined
         });
       }
-
-      state.inventory.licensslut.masterData = parsed;
-      state.inventory.licensslut.file1Name = fileName;
+      return parsed;
     }
 
-    function parseLicensslutAutomaterRows(rows, fileName) {
-      ensureInventoryStruct();
-      const parsed = [];
-      for (let i = 0; i < rows.length; i++) {
+    function extractAutomaterRowsFromSheet(rows) {
+      if (!Array.isArray(rows) || !rows.length) return [];
+
+      // 1. Identifiera rubrikrad i de första 40 raderna
+      let headerRowIdx = -1;
+      let colMap = { serial: -1, individ: -1, artnr: -1, benamning: -1, extra: -1 };
+
+      for (let i = 0; i < Math.min(40, rows.length); i++) {
         const r = rows[i];
-        if (!r || r.length === 0) continue;
-        const cleanCols = r.map(c => decodeHtmlEntities(String(c || "").trim()));
+        if (!Array.isArray(r)) continue;
+        const cleanCells = r.map(c => cleanHeaderKey(c));
+
+        const sIdx = cleanCells.findIndex(c => /serie|serial|s\/n|sn|enhetsnr|enhetsid|apparat|device|barcode/i.test(c));
+        const indIdx = cleanCells.findIndex(c => /individ|inv|anlaggning|objekt/i.test(c));
+        const artIdx = cleanCells.findIndex(c => /artikelnr|artikel|art\.nr|produktkod/i.test(c));
+        const benIdx = cleanCells.findIndex(c => /benamning|modell|beskrivning|namn|enhetstyp/i.test(c));
+        const extIdx = cleanCells.findIndex(c => /licens|slutdatum|utgar|datum|status|kund|organisation/i.test(c));
+
+        if (sIdx !== -1 || indIdx !== -1 || (artIdx !== -1 && benIdx !== -1)) {
+          headerRowIdx = i;
+          colMap = { serial: sIdx, individ: indIdx, artnr: artIdx, benamning: benIdx, extra: extIdx };
+          break;
+        }
+      }
+
+      const parsed = [];
+      const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0;
+
+      for (let r = startRow; r < rows.length; r++) {
+        const row = rows[r];
+        if (!Array.isArray(row) || row.every(c => c === null || c === undefined || String(c).trim() === '')) continue;
+        const cleanCols = row.map(c => decodeHtmlEntities(String(c || "").trim()));
         const joined = cleanCols.join(" ").trim();
         if (!joined) continue;
 
-        const serienr = extractSerialPPorTT(joined);
-        const individnr = extractIndividId(joined);
-        const artnr = extractAllowedArtnr(joined);
+        let serienr = "";
+        let individnr = "";
+        let artnr = "";
+        let benamning = "";
+
+        if (headerRowIdx !== -1) {
+          if (colMap.serial !== -1) serienr = cleanCols[colMap.serial] || "";
+          if (colMap.individ !== -1) individnr = cleanCols[colMap.individ] || "";
+          if (colMap.artnr !== -1) artnr = cleanCols[colMap.artnr] || "";
+          if (colMap.benamning !== -1) benamning = cleanCols[colMap.benamning] || "";
+          if (colMap.extra !== -1 && cleanCols[colMap.extra]) {
+            benamning = benamning ? `${benamning} (${cleanCols[colMap.extra]})` : cleanCols[colMap.extra];
+          }
+        }
+
+        // Fallbacks för serienummer
+        if (!serienr) {
+          const ppMatch = extractSerialPPorTT(joined);
+          if (ppMatch) {
+            serienr = ppMatch;
+          } else {
+            // Leta efter cell som ser ut som ett serienummer
+            for (const c of cleanCols) {
+              if (/^(?:PP|TT|[A-Z]{1,4})[0-9\-]+$/i.test(c) || /^(?:E300|ANNA|EV|DOS)[0-9\-]+$/i.test(c)) {
+                serienr = c;
+                break;
+              }
+            }
+          }
+        }
+
+        // Fallbacks för individnummer
+        if (!individnr) {
+          individnr = extractIndividId(joined);
+        }
+
+        // Fallbacks för artikelnummer
+        if (!artnr) {
+          artnr = extractAllowedArtnr(joined);
+        }
+
+        // Fallbacks för benämning
+        if (!benamning) {
+          const benamningCandidates = cleanCols.filter(c =>
+            c.length > 4 &&
+            !c.toLowerCase().includes("licensslut för") &&
+            !c.toLowerCase().includes("individen finns") &&
+            c !== serienr &&
+            c !== individnr &&
+            c !== artnr
+          );
+          benamning = benamningCandidates.sort((a, b) => b.length - a.length)[0] || 
+            (artnr === '83322' ? 'Evondos E300' : artnr === '87613' ? 'Evondos Anna' : 'Läkemedelsautomat');
+        }
+
+        // Om varken serienr eller individnr hittats, leta efter valfri numerisk/alfanumerisk identifierare
+        if (!serienr && !individnr) {
+          const candidate = cleanCols.find(c => c.length >= 3 && /[0-9]/.test(c) && !/datum|licens|totalt|summa/i.test(c));
+          if (candidate) serienr = candidate;
+        }
 
         if (!serienr && !individnr) continue;
-
-        const benamningCandidates = cleanCols.filter(c =>
-          c.length > 5 &&
-          !c.toLowerCase().includes("licensslut för") &&
-          !c.toLowerCase().includes("individen finns") &&
-          c !== serienr &&
-          c !== individnr &&
-          c !== artnr
-        );
-        const benamning = benamningCandidates.sort((a, b) => b.length - a.length)[0] || "Läkemedelsautomat";
 
         parsed.push({
           serienr: serienr || "-",
           individnr: individnr || "-",
           artnr: artnr || "-",
-          benamning: benamning
+          benamning: benamning || "Läkemedelsautomat"
         });
       }
 
-      state.inventory.licensslut.automaterData = parsed;
-      state.inventory.licensslut.file2Name = fileName;
+      return parsed;
     }
 
     function clearLicensslutData() {
