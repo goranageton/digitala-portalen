@@ -2745,6 +2745,9 @@
     function switchTab(tab) {
       if (tab === 'game') {
         document.body.classList.add('portal-game-active');
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
       } else {
         document.body.classList.remove('portal-game-active');
       }
@@ -2763,8 +2766,13 @@
           } else if (t === 'licensslut') {
             renderLicensslut();
           } else if (t === 'game') {
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
             if (window.kemGame) {
-              window.kemGame.renderStage();
+              setTimeout(() => {
+                window.kemGame.renderStage();
+              }, 30);
             }
           }
         } else {

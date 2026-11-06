@@ -21,37 +21,69 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Clean, crisp background - NO background bubbles */
+/* Clean, crisp background - Perfect fit without scrolling */
+body.portal-game-active {
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+body.portal-game-active header.sticky {
+  position: relative !important;
+  flex-shrink: 0 !important;
+}
+
+body.portal-game-active header.sticky > div {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  gap: 6px 12px !important;
+}
+
+body.portal-game-active header.sticky nav {
+  gap: 4px !important;
+}
+
+body.portal-game-active header.sticky nav button {
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+}
+
+body.portal-game-active main {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  padding: 4px 12px 6px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
 #view-game {
   width: 100%;
-  height: calc(100vh - 145px);
-  min-height: 480px;
-  max-height: calc(100vh - 140px);
+  flex: 1 1 0%;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
   position: relative;
   overflow: hidden;
   background: radial-gradient(circle at 50% 38%, #272439 0%, #181624 55%, #0f0e16 100%);
   color: var(--text-main, #ffffff);
   font-family: 'Fredoka', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  border-radius: 1.5rem;
+  border-radius: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
 }
 
 #view-game.hidden {
   display: none !important;
-}
-
-body.portal-game-active {
-  overflow: hidden !important;
-}
-
-body.portal-game-active main {
-  padding-top: 0.5rem !important;
-  padding-bottom: 0.5rem !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
 }
 
 /* Modern Font Accents */
@@ -64,11 +96,13 @@ body.portal-game-active main {
   position: relative;
   width: 100%;
   height: 100%;
+  flex: 1 1 0%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 16px 10px;
+  padding: 6px 12px 6px;
   z-index: 10;
   overflow: hidden;
 }
@@ -80,21 +114,23 @@ body.portal-game-active main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: clamp(4px, 1vw, 10px);
   z-index: 25;
+  flex-shrink: 0;
 }
 
 .top-group {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: clamp(4px, 0.8vw, 8px);
+  flex-shrink: 0;
 }
 
 .btn-3d {
   position: relative;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+  width: clamp(34px, 3.8vw, 42px);
+  height: clamp(34px, 3.8vw, 42px);
+  border-radius: 11px;
   border: 2px solid rgba(255, 255, 255, 0.28);
   display: inline-flex;
   align-items: center;
@@ -104,6 +140,7 @@ body.portal-game-active main {
   font-weight: 800;
   transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease, opacity 0.15s ease, box-shadow 0.14s ease;
   outline: none;
+  flex-shrink: 0;
 }
 
 .btn-3d:hover:not(:disabled) {
@@ -188,18 +225,20 @@ body.portal-game-active main {
 
 /* Center Moves & Level Banner (With 8-Bit Arcade Elements) */
 .status-banner {
-  flex: 1;
-  max-width: 480px;
-  height: 44px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 440px;
+  height: clamp(34px, 4.2vh, 42px);
   background: linear-gradient(180deg, #685df8 0%, #564be6 100%);
   border: 2px solid rgba(255, 255, 255, 0.4);
-  border-radius: 14px;
-  box-shadow: 0 4px 0 #392fa8, 0 6px 16px rgba(0, 0, 0, 0.45);
+  border-radius: 12px;
+  box-shadow: 0 3px 0 #392fa8, 0 5px 14px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
-  gap: 8px;
+  padding: 0 clamp(4px, 1vw, 10px);
+  gap: 6px;
+  flex-shrink: 1;
 }
 
 .nav-arrow-btn {
@@ -281,14 +320,15 @@ body.portal-game-active main {
 
 /* ================= SUB-HEADER / CHAPTER BAR ================= */
 .chapter-bar {
-  margin-top: 4px;
+  margin: 2px 0 0 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 .chapter-badge {
@@ -310,24 +350,26 @@ body.portal-game-active main {
 /* ================= STAGE & 8-BIT ARCADE TEST TUBES ================= */
 .game-stage {
   position: relative;
-  flex: 1;
+  flex: 1 1 0%;
+  min-height: 0;
   width: 100%;
   max-width: 1120px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 4px 10px;
-  overflow: visible;
+  gap: clamp(6px, 1.4vh, 12px);
+  padding: 2px 8px;
+  overflow: hidden;
 }
 
 .tubes-row {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 18px;
+  gap: clamp(8px, 1.8vw, 18px);
   flex-wrap: nowrap;
+  max-width: 100%;
 }
 
 /* Test Tube Container */
@@ -789,22 +831,25 @@ body.colorblind-on .cb-symbol {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: clamp(6px, 1.2vw, 10px);
   z-index: 15;
+  flex-shrink: 0;
+  padding: 2px 0;
 }
 
 .pill-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 12px;
+  gap: 5px;
+  padding: clamp(4px, 0.8vh, 6px) clamp(8px, 1.4vw, 14px);
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.07);
   color: #e8e8f5;
-  font-size: 13.5px;
+  font-size: clamp(11.5px, 1.2vw, 13px);
   font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.15s ease, transform 0.12s ease;
 }
 
@@ -2004,41 +2049,42 @@ body.colorblind-on .cb-symbol {
 
 /* Responsive adjustments */
 @media (max-width: 760px) {
-  :root {
-    --unit-height: 42px;
-    --tube-width: 58px;
-  }
   .top-bar {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .status-banner {
-    order: -1;
-    flex-basis: 100%;
-    max-width: 100%;
-  }
-  .tubes-row {
-    gap: 14px;
+    flex-wrap: nowrap;
+    gap: 4px;
   }
   .btn-3d {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
+    width: clamp(28px, 7.5vw, 36px);
+    height: clamp(28px, 7.5vw, 36px);
+    border-radius: 9px;
+  }
+  .btn-3d svg {
+    width: 15px;
+    height: 15px;
+  }
+  .status-banner {
+    padding: 0 4px;
+    gap: 4px;
+    height: 32px;
+  }
+  .tubes-row {
+    gap: 10px;
   }
   .start-secondary-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
   }
   .baltazar-main-title {
-    font-size: 38px;
+    font-size: 32px;
   }
   .baltazar-interactive-stage {
-    gap: 16px;
+    gap: 12px;
   }
   .baltazar-wisdom-container {
-    padding: 12px 16px;
+    padding: 8px 12px;
   }
   .baltazar-speech-bubble {
-    font-size: 14px;
+    font-size: 12px;
   }
 }
 

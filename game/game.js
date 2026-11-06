@@ -702,13 +702,27 @@
       );
     }
 
+    const availH = stage.clientHeight || (window.innerHeight - 200);
+    const availW = stage.clientWidth || window.innerWidth;
+    const maxTubesInRow = rows.reduce((max, r) => Math.max(max, r.length), 0);
+
+    let calcUnit = 38;
+    let calcWidth = 50;
+
     if (rows.length === 2) {
-      document.documentElement.style.setProperty('--unit-height', window.innerWidth < 760 ? '28px' : '35px');
-      document.documentElement.style.setProperty('--tube-width', window.innerWidth < 760 ? '42px' : '50px');
+      const hLimit = Math.floor((availH - 50) / 8.8);
+      const wLimit = Math.floor((availW - (maxTubesInRow * 12)) / (maxTubesInRow * 1.35));
+      calcUnit = Math.max(20, Math.min(32, hLimit, wLimit));
+      calcWidth = Math.max(28, Math.min(46, Math.round(calcUnit * 1.35)));
     } else {
-      document.documentElement.style.setProperty('--unit-height', window.innerWidth < 760 ? '36px' : '42px');
-      document.documentElement.style.setProperty('--tube-width', window.innerWidth < 760 ? '48px' : '58px');
+      const hLimit = Math.floor((availH - 35) / 4.4);
+      const wLimit = Math.floor((availW - (maxTubesInRow * 14)) / (maxTubesInRow * 1.35));
+      calcUnit = Math.max(24, Math.min(42, hLimit, wLimit));
+      calcWidth = Math.max(34, Math.min(58, Math.round(calcUnit * 1.35)));
     }
+
+    document.documentElement.style.setProperty('--unit-height', `${calcUnit}px`);
+    document.documentElement.style.setProperty('--tube-width', `${calcWidth}px`);
 
     rows.forEach((rowItems) => {
       const rowEl = document.createElement('div');
@@ -1361,6 +1375,18 @@
 
     document.getElementById('win-map-btn').addEventListener('click', () => {
       openModal('levels-modal');
+    });
+
+    // Window resize listener to keep game perfectly fitted
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const gameView = document.getElementById('view-game');
+        if (gameView && !gameView.classList.contains('hidden') && !state.isStartScreenOpen) {
+          renderStage();
+        }
+      }, 60);
     });
 
     // Keyboard shortcuts
