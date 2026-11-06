@@ -150,8 +150,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
       <!-- Logotyp & Titel -->
       <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-500 to-indigo-700 text-white flex items-center justify-center shadow-lg shadow-brand-500/25">
-          <i class="fa-solid fa-layer-group text-lg"></i>
+        <div class="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden ring-2 ring-brand-500/60 shadow-xl shadow-brand-500/30 shrink-0 bg-slate-800">
+          <img src="profile.jpg" alt="Goran Ageton" class="w-full h-full object-cover object-top" />
         </div>
         <div>
           <div class="flex items-center gap-2">
@@ -322,20 +322,16 @@
         <div class="flex flex-wrap items-center gap-2">
           <label class="cursor-pointer px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition">
             <i class="fa-solid fa-file-excel"></i>
-            <span>Importera Excel / CSV</span>
+            <span>Importera Excel</span>
             <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleInventoryExcelUpload(event)" />
           </label>
           <button type="button" onclick="toggleExcelSlicerPanel()" id="excel-slicer-toggle-btn" class="px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-sky-600/20 transition">
-            <i class="fa-solid fa-chart-simple"></i>
-            <span>Excel-statistik</span>
+            <i class="fa-solid fa-warehouse"></i>
+            <span>Lager 81</span>
           </button>
           <button type="button" onclick="toggleRekondActivityPanel()" id="rekond-activity-toggle-btn" class="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition">
             <i class="fa-solid fa-table-list"></i>
             <span>Rekondaktivitet</span>
-          </button>
-          <button type="button" onclick="openPasteInventoryModal()" class="px-4 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-brand-600/20 transition">
-            <i class="fa-solid fa-paste"></i>
-            <span>Klistra in systemdata</span>
           </button>
           <button type="button" onclick="exportInventoryExcel()" class="px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-bold flex items-center gap-2 transition" title="Exportera avstämningsrapport till Excel">
             <i class="fa-solid fa-download text-brand-500"></i>
@@ -5600,7 +5596,7 @@
           <tr>
             <td colspan="6" class="py-12 px-4 text-center text-slate-400 font-semibold">
               ${sys.length === 0 && extraScans.length === 0
-                ? 'Ingen systemdata importerad ännu. Klicka på "Importera Excel / CSV" eller "Klistra in systemdata" ovan för att börja.'
+                ? 'Ingen systemdata importerad ännu. Klicka på "Importera Excel" ovan för att börja.'
                 : 'Inga rader matchar ditt nuvarande urval.'}
             </td>
           </tr>
