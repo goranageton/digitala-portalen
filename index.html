@@ -361,9 +361,9 @@
             <i class="fa-solid fa-warehouse"></i>
             <span>Lager 81</span>
           </button>
-          <button type="button" onclick="toggleRekondActivityPanel()" id="rekond-activity-toggle-btn" class="h-8 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Visa pivottabell för planerade rekondaktiviteter">
+          <button type="button" onclick="toggleRekondActivityPanel()" id="rekond-activity-toggle-btn" class="h-8 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Visa rekondplanering för planerade aktiviteter">
             <i class="fa-solid fa-table-list"></i>
-            <span>Pivottabell</span>
+            <span>Rekondplanering</span>
           </button>
           <button type="button" onclick="exportInventoryExcel()" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition" title="Exportera avstämningsrapport till Excel">
             <i class="fa-solid fa-download text-brand-500"></i>
@@ -460,7 +460,7 @@
             </div>
             <div>
               <h3 class="text-base font-extrabold flex items-center gap-2">
-                <span>Rekondaktivitet – Pivottabell</span>
+                <span>Rekondplanering</span>
                 <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">Planerat datum & Rubrik</span>
               </h3>
               <p class="text-xs text-slate-500 dark:text-slate-400">Klistra in eller importera Excel-export från systemet för att se antal aktiviteter per planerat datum och rubrik.</p>
@@ -608,7 +608,7 @@
               <table class="w-full text-left border-collapse text-xs">
                 <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-300 text-[10px] font-extrabold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <tr>
-                    <th class="py-2 px-2.5">Artnr & Del</th>
+                    <th class="py-2 px-2.5">Artikelnummer</th>
                     <th class="py-2 px-2 text-center w-28">Antal</th>
                     <th class="py-2 px-1 text-center w-8"></th>
                   </tr>
@@ -676,17 +676,13 @@
             </select>
           </div>
 
-          <!-- Funktionsknappar (Excel, Klistra in, Expandera/Fäll ihop, Rensa) -->
+          <!-- Funktionsknappar (Excel, Expandera/Fäll ihop, Rensa) -->
           <div class="flex items-center gap-1.5 shrink-0">
             <label class="cursor-pointer h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition shrink-0" title="Importera ny Excel-fil för gorag1 & matol39">
               <i class="fa-solid fa-file-excel"></i>
               <span>Importera</span>
               <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleRekondCountFileUpload(event)" />
             </label>
-            <button type="button" onclick="openRekondCountModal()" class="h-8 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition shrink-0" title="Klistra in Excel-rader direkt">
-              <i class="fa-solid fa-paste"></i>
-              <span>Klistra in</span>
-            </button>
             <button type="button" onclick="toggleAllRekondCountArticles(true)" class="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center justify-center transition shrink-0" title="Expandera alla artiklar">
               <i class="fa-solid fa-angles-down"></i>
             </button>
@@ -2596,7 +2592,7 @@
     let activeGuideCategory = 'Alla';
     let activeInventoryViewMode = 'all';
     let collapsedPivotDates = {};
-    let collapsedRekondCountArticles = {};
+    let expandedRekondCountArticles = {};
     let licensslutCurrentTab = 'all_auto';
     let licensslutComparisonResults = [];
 
@@ -3829,7 +3825,7 @@
       let html = '';
       sortedArticles.forEach(artKey => {
         const group = grouped[artKey];
-        const isCollapsed = Boolean(collapsedRekondCountArticles[artKey]);
+        const isExpanded = Boolean(expandedRekondCountArticles[artKey]);
         const safeArt = artKey.replace(/'/g, "\\'");
 
         // Huvudnamn för artikeln om det finns
@@ -3838,11 +3834,11 @@
 
         // Artikelrad: Huvudrad på en enda linje (Tag + Benämning + Summa)
         html += `
-          <tr onclick="toggleRekondCountCollapse('${safeArt}')" class="cursor-pointer bg-slate-50/80 dark:bg-slate-900/90 hover:bg-indigo-500/10 dark:hover:bg-indigo-500/15 font-bold text-slate-900 dark:text-white border-t border-slate-200 dark:border-slate-800 transition select-none group">
+          <tr onclick="toggleRekondCountExpand('${safeArt}')" class="cursor-pointer bg-slate-50/80 dark:bg-slate-900/90 hover:bg-indigo-500/10 dark:hover:bg-indigo-500/15 font-bold text-slate-900 dark:text-white border-t border-slate-200 dark:border-slate-800 transition select-none group">
             <td class="py-2 px-3">
               <div class="flex items-center gap-2 min-w-0">
                 <span class="w-4 h-4 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[9px] text-slate-500 dark:text-slate-300 shrink-0 shadow-xs">
-                  <i class="fa-solid ${isCollapsed ? 'fa-plus' : 'fa-minus'}"></i>
+                  <i class="fa-solid ${isExpanded ? 'fa-minus' : 'fa-plus'}"></i>
                 </span>
                 <span class="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-mono font-extrabold text-xs shrink-0 border border-indigo-500/25">
                   ${artKey}
@@ -3862,7 +3858,7 @@
         `;
 
         // Underrader: När man expanderar visas teknikernas fördelning kompakt indragen
-        if (!isCollapsed) {
+        if (isExpanded) {
           const benamningEntries = Object.entries(group.benamningar).sort((a, b) => a[0].localeCompare(b[0], 'sv'));
           benamningEntries.forEach(([benamningName, bData]) => {
             const safeName = benamningName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -3909,16 +3905,20 @@
       `;
     }
 
-    function toggleRekondCountCollapse(artKey) {
-      collapsedRekondCountArticles[artKey] = !collapsedRekondCountArticles[artKey];
+    function toggleRekondCountExpand(artKey) {
+      expandedRekondCountArticles[artKey] = !expandedRekondCountArticles[artKey];
       renderRekondCountPivot();
+    }
+
+    function toggleRekondCountCollapse(artKey) {
+      toggleRekondCountExpand(artKey);
     }
 
     function toggleAllRekondCountArticles(expand) {
       ensureInventoryStruct();
       const articles = [...new Set(state.inventory.rekondCount.map(x => x.artikel))];
       articles.forEach(a => {
-        collapsedRekondCountArticles[a] = !expand;
+        expandedRekondCountArticles[a] = Boolean(expand);
       });
       renderRekondCountPivot();
     }
@@ -3927,7 +3927,7 @@
       openConfirmModal('Ta bort artikel', `Vill du ta bort artikelnr ${artnr} från pivottabellen?`, async () => {
         ensureInventoryStruct();
         state.inventory.rekondCount = state.inventory.rekondCount.filter(item => item.artikel !== artnr);
-        delete collapsedRekondCountArticles[artnr];
+        delete expandedRekondCountArticles[artnr];
         await syncInventoryToSupabase();
         renderRekondCountPivot();
         showToast(`Tog bort artikel ${artnr}.`);
@@ -3948,7 +3948,7 @@
       openConfirmModal('Rensa Antal rekondade', 'Vill du rensa all inläst data i pivottabellen för Antal rekondade?', async () => {
         ensureInventoryStruct();
         state.inventory.rekondCount = [];
-        collapsedRekondCountArticles = {};
+        expandedRekondCountArticles = {};
         await syncInventoryToSupabase();
         renderRekondCountPivot();
         showToast('Pivottabellen för Antal rekondade har rensats.');
@@ -4048,7 +4048,7 @@
 
           ensureInventoryStruct();
           state.inventory.rekondCount = bestRows;
-          collapsedRekondCountArticles = {};
+          expandedRekondCountArticles = {};
           await syncInventoryToSupabase();
           renderRekondCountPivot();
           const total = bestRows.reduce((acc, x) => acc + (Number(x.count) || 1), 0);
@@ -4088,7 +4088,7 @@
 
       ensureInventoryStruct();
       state.inventory.rekondCount = parsed;
-      collapsedRekondCountArticles = {};
+      expandedRekondCountArticles = {};
       document.getElementById('rekond-count-textarea').value = '';
       closeRekondCountModal();
       await syncInventoryToSupabase();
@@ -6128,8 +6128,8 @@
       tbody.innerHTML = state.inventory.spareParts.map((sp, idx) => `
         <tr class="bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
           <td class="py-1.5 px-2.5">
-            <div class="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">${sp.name || 'Reservdel'}</div>
-            <div class="text-[10px] font-mono text-brand-600 dark:text-brand-400">${sp.artnr}</div>
+            <div class="font-extrabold text-xs sm:text-sm font-mono text-slate-900 dark:text-white leading-tight">${sp.artnr || '—'}</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${sp.name || 'Reservdel'}</div>
           </td>
           <td class="py-1.5 px-2">
             <div class="flex items-center justify-center gap-1">
