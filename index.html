@@ -791,7 +791,7 @@
             </span>
             <span id="licensslutFile1CountBadge" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">0 rader (Artnr 83322 &amp; 87613)</span>
           </div>
-          <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center justify-between gap-2.5">
             <div class="flex items-center gap-2.5 min-w-0 flex-1">
               <div class="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 text-sm shadow-sm">
                 <i class="fa-solid fa-database"></i>
@@ -804,11 +804,17 @@
                 </div>
               </div>
             </div>
-            <label class="cursor-pointer shrink-0 inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
-              <i class="fa-solid fa-upload mr-1.5"></i>
-              <span>Välj ny fil</span>
-              <input type="file" id="licensslutFileInput1" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleLicensslutFileUpload(event, 1)">
-            </label>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <label class="cursor-pointer inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
+                <i class="fa-solid fa-upload mr-1.5"></i>
+                <span>Välj ny fil</span>
+                <input type="file" id="licensslutFileInput1" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleLicensslutFileUpload(event, 1)">
+              </label>
+              <button type="button" id="licensslutClearFile1Btn" onclick="clearLicensslutSingleFile(1)" title="Töm Excel-fil i Steg 1 (Lager 81)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-600 text-rose-600 dark:text-rose-400 hover:text-white border border-rose-500/30 text-xs font-bold rounded-xl transition shadow-sm">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Ta bort</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -820,7 +826,7 @@
             </span>
             <span id="licensslutFile2CountBadge" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">0 rader</span>
           </div>
-          <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center justify-between gap-2.5">
             <div class="flex items-center gap-2.5 min-w-0 flex-1">
               <div class="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 text-sm shadow-sm">
                 <i class="fa-solid fa-microchip"></i>
@@ -833,11 +839,17 @@
                 </div>
               </div>
             </div>
-            <label class="cursor-pointer shrink-0 inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-purple-600 hover:text-white text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
-              <i class="fa-solid fa-upload mr-1.5"></i>
-              <span>Välj ny fil</span>
-              <input type="file" id="licensslutFileInput2" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleLicensslutFileUpload(event, 2)">
-            </label>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <label class="cursor-pointer inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-purple-600 hover:text-white text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
+                <i class="fa-solid fa-upload mr-1.5"></i>
+                <span>Välj ny fil</span>
+                <input type="file" id="licensslutFileInput2" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleLicensslutFileUpload(event, 2)">
+              </label>
+              <button type="button" id="licensslutClearFile2Btn" onclick="clearLicensslutSingleFile(2)" title="Töm Excel-fil i Steg 2 (Automater)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-600 text-rose-600 dark:text-rose-400 hover:text-white border border-rose-500/30 text-xs font-bold rounded-xl transition shadow-sm">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Ta bort</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -4955,6 +4967,44 @@
       }
 
       return parsed;
+    }
+
+    function clearLicensslutSingleFile(fileNumber) {
+      ensureInventoryStruct();
+      const lic = state.inventory.licensslut;
+      if (fileNumber === 1) {
+        const hasData = (lic.masterData && lic.masterData.length > 0) || (lic.file1Name && lic.file1Name !== 'Ingen fil inläst');
+        if (!hasData) {
+          showToast("Ingen Excel-fil är inläst i Steg 1 (Lager 81).");
+          return;
+        }
+        const fName = lic.file1Name || 'Lager 81';
+        openConfirmModal('Ta bort fil i Steg 1 (Lager 81)', `Vill du verkligen ta bort den inlästa Excel-filen "${fName}" från Steg 1 (Lager 81)?`, async () => {
+          state.inventory.licensslut.masterData = [];
+          state.inventory.licensslut.file1Name = 'Ingen fil inläst';
+          const f1 = document.getElementById('licensslutFileInput1');
+          if (f1) f1.value = "";
+          await syncInventoryToSupabase();
+          runLicensslutComparison();
+          showToast(`Excel-filen "${fName}" i Steg 1 har tömts.`);
+        });
+      } else if (fileNumber === 2) {
+        const hasData = (lic.automaterData && lic.automaterData.length > 0) || (lic.file2Name && lic.file2Name !== 'Ingen fil inläst');
+        if (!hasData) {
+          showToast("Ingen Excel-fil är inläst i Steg 2 (Automater).");
+          return;
+        }
+        const fName = lic.file2Name || 'Licensslut för läkemedelsautomater';
+        openConfirmModal('Ta bort fil i Steg 2 (Automater)', `Vill du verkligen ta bort den inlästa Excel-filen "${fName}" från Steg 2 (Licensslut för läkemedelsautomater)?`, async () => {
+          state.inventory.licensslut.automaterData = [];
+          state.inventory.licensslut.file2Name = 'Ingen fil inläst';
+          const f2 = document.getElementById('licensslutFileInput2');
+          if (f2) f2.value = "";
+          await syncInventoryToSupabase();
+          runLicensslutComparison();
+          showToast(`Excel-filen "${fName}" i Steg 2 har tömts.`);
+        });
+      }
     }
 
     function clearLicensslutData() {
