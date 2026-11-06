@@ -2173,13 +2173,23 @@
   </div>
 
   <!-- ==================== MODAL: BEKRÄFTA RADERING ==================== -->
-  <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-      <h3 id="confirm-title" class="text-base font-extrabold">Bekräfta</h3>
-      <p id="confirm-message" class="text-sm text-slate-600 dark:text-slate-300"></p>
-      <div class="flex justify-end gap-2">
-        <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-xs font-bold">Avbryt</button>
-        <button type="button" id="confirm-ok-btn" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold">Ta bort</button>
+  <div id="confirm-modal" class="hidden fixed inset-0 z-[200] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-200">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-rose-500/20 dark:border-rose-500/30 text-center space-y-4">
+      <div class="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center text-2xl mx-auto shadow-lg shadow-rose-500/10">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div>
+        <h3 id="confirm-title" class="text-lg font-extrabold text-slate-900 dark:text-white">Är du säker?</h3>
+        <p id="confirm-message" class="text-xs sm:text-sm text-slate-500 dark:text-slate-300 mt-1.5 leading-relaxed"></p>
+      </div>
+      <div class="flex items-center gap-3 pt-2">
+        <button type="button" onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition">
+          Avbryt
+        </button>
+        <button type="button" id="confirm-ok-btn" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold shadow-lg shadow-rose-600/30 flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-trash-can"></i>
+          <span>Ja, ta bort</span>
+        </button>
       </div>
     </div>
   </div>
@@ -5783,12 +5793,14 @@
     async function deleteSparePartRow(idx) {
       ensureInventoryStruct();
       const removed = state.inventory.spareParts[idx];
-      state.inventory.spareParts.splice(idx, 1);
-      await syncInventoryToSupabase();
-      renderSparePartsTable();
-      if (removed) {
-        showToast(`Tog bort artikel ${removed.artnr ? '(' + removed.artnr + ')' : ''} ${removed.name || ''} från reservdelar.`);
-      }
+      const name = removed?.name ? `"${removed.name}"` : (removed?.artnr ? `artikelnr ${removed.artnr}` : 'denna artikel');
+
+      openConfirmModal('Vill du ta bort artikeln?', `Är du säker på att du vill ta bort ${name} från reservdelslistan?`, async () => {
+        state.inventory.spareParts.splice(idx, 1);
+        await syncInventoryToSupabase();
+        renderSparePartsTable();
+        showToast(`Tog bort ${name} från reservdelar.`);
+      });
     }
 
     function resetInventoryChecks() {
@@ -6549,15 +6561,17 @@
       ensureInventoryStruct();
       const catalog = state.inventory.accessoriesCatalog || [];
       const found = catalog.find(x => codesMatch(x.artnr, artnr));
-      const label = found ? `${found.artnr} (${found.name})` : artnr;
-      openConfirmModal('Ta bort artikel ur katalogen', `Vill du ta bort ${label} från tillbehörslistan?`, async () => {
+      const artName = found?.name ? `"${found.name}"` : `artikelnr ${artnr}`;
+      const fullLabel = found?.name ? `${found.name} (Artikelnr: ${found.artnr})` : `artikelnr ${artnr}`;
+
+      openConfirmModal('Vill du ta bort artikeln?', `Är du säker på att du vill ta bort ${fullLabel} från katalogen? Den kommer inte längre att visas i tillbehörslistan.`, async () => {
         state.inventory.accessoriesCatalog = catalog.filter(x => !codesMatch(x.artnr, artnr));
         delete selectedAccessories[artnr];
         populateAccessoriesCategories();
         await syncInventoryToSupabase();
         await saveState();
         renderAccessoriesCatalog();
-        showToast(`Artikeln ${artnr} har tagits bort.`);
+        showToast(`Artikeln ${artName} har tagits bort.`);
       });
     }
 
