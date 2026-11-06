@@ -637,7 +637,7 @@
     <!-- ==================== VY 5: ANTAL REKONDADE (PIVOTTABELL GORAG1 & MATOL39) ==================== -->
     <section id="view-rekondCount" class="hidden space-y-3.5">
       <!-- 1. KOMPAKT VERKTYGSRAD (Statusbrickor, Filter & Funktionsknappar) -->
-      <div class="bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-2xl shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      <div class="bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 p-2.5 sm:px-4 sm:py-2.5 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-2.5">
         <!-- Vänster: Nyckeltal i micro-badges -->
         <div class="flex flex-wrap items-center gap-1.5 shrink-0">
           <div class="h-8 px-2.5 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-300 border border-sky-500/20 text-xs font-bold flex items-center gap-1.5" title="Totalsumma rekondade enheter">
@@ -662,38 +662,41 @@
           </div>
         </div>
 
-        <!-- Mitten: Filter för Benämning och Tekniker -->
-        <div class="flex items-center gap-2 flex-1 max-w-xl">
-          <select id="rekond-count-benamning-select" onchange="renderRekondCountPivot()" class="flex-1 px-3 py-1.5 h-8 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer truncate" title="Filtrera på artikel eller benämning">
-            <option value="all">Alla artiklar &amp; benämningar</option>
-          </select>
-          <select id="rekond-count-user-filter" onchange="renderRekondCountPivot()" class="w-44 px-2.5 py-1.5 h-8 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shrink-0" title="Filtrera på tekniker">
-            <option value="all">Alla (gorag1 &amp; matol39)</option>
-            <option value="gorag1">Endast Goran</option>
-            <option value="matol39">Endast Mats</option>
-          </select>
-        </div>
+        <!-- Höger / Sida: Filter & Knappar samlade utan risk för överlappning -->
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <!-- Filter för Benämning och Tekniker -->
+          <div class="flex items-center gap-2">
+            <select id="rekond-count-benamning-select" onchange="renderRekondCountPivot()" class="w-48 sm:w-60 min-w-0 px-2.5 py-1.5 h-8 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer truncate" title="Filtrera på artikel eller benämning">
+              <option value="all">Alla artiklar &amp; benämningar</option>
+            </select>
+            <select id="rekond-count-user-filter" onchange="renderRekondCountPivot()" class="w-36 sm:w-44 px-2.5 py-1.5 h-8 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shrink-0" title="Filtrera på tekniker">
+              <option value="all">Alla (gorag1 &amp; matol39)</option>
+              <option value="gorag1">Endast Goran</option>
+              <option value="matol39">Endast Mats</option>
+            </select>
+          </div>
 
-        <!-- Höger: Knappar (Excel, Expandera/Fäll ihop, Rensa) -->
-        <div class="flex items-center gap-1.5 shrink-0 self-end xl:self-auto">
-          <label class="cursor-pointer h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Importera ny Excel-fil för gorag1 & matol39">
-            <i class="fa-solid fa-file-excel"></i>
-            <span>Importera</span>
-            <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleRekondCountFileUpload(event)" />
-          </label>
-          <button type="button" onclick="openRekondCountModal()" class="h-8 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition" title="Klistra in Excel-rader direkt">
-            <i class="fa-solid fa-paste"></i>
-            <span class="hidden sm:inline">Klistra in</span>
-          </button>
-          <button type="button" onclick="toggleAllRekondCountArticles(true)" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold border border-slate-200 dark:border-slate-700 transition" title="Expandera alla artiklar">
-            <i class="fa-solid fa-angles-down"></i>
-          </button>
-          <button type="button" onclick="toggleAllRekondCountArticles(false)" class="h-8 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold border border-slate-200 dark:border-slate-700 transition" title="Fäll ihop alla artiklar">
-            <i class="fa-solid fa-angles-up"></i>
-          </button>
-          <button type="button" onclick="clearRekondCountData()" class="h-8 w-8 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white text-xs font-bold flex items-center justify-center border border-rose-500/20 transition" title="Rensa pivottabell">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
+          <!-- Funktionsknappar (Excel, Klistra in, Expandera/Fäll ihop, Rensa) -->
+          <div class="flex items-center gap-1.5 shrink-0">
+            <label class="cursor-pointer h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition shrink-0" title="Importera ny Excel-fil för gorag1 & matol39">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Importera</span>
+              <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleRekondCountFileUpload(event)" />
+            </label>
+            <button type="button" onclick="openRekondCountModal()" class="h-8 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition shrink-0" title="Klistra in Excel-rader direkt">
+              <i class="fa-solid fa-paste"></i>
+              <span>Klistra in</span>
+            </button>
+            <button type="button" onclick="toggleAllRekondCountArticles(true)" class="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center justify-center transition shrink-0" title="Expandera alla artiklar">
+              <i class="fa-solid fa-angles-down"></i>
+            </button>
+            <button type="button" onclick="toggleAllRekondCountArticles(false)" class="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center justify-center transition shrink-0" title="Fäll ihop alla artiklar">
+              <i class="fa-solid fa-angles-up"></i>
+            </button>
+            <button type="button" onclick="clearRekondCountData()" class="h-8 w-8 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white text-xs font-bold flex items-center justify-center border border-rose-500/20 transition shrink-0" title="Rensa pivottabell">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
         </div>
       </div>
 
