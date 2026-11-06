@@ -2608,6 +2608,7 @@
         systemItems: [],
         scannedLogs: [],
         copiedIndivids: [],
+        copiedSpareArtnrs: [],
         rekondActivities: [],
         rekondCount: [],
         licensslut: {
@@ -2840,6 +2841,7 @@
               systemItems: Array.isArray(data.inventory.systemItems) ? data.inventory.systemItems : [],
               scannedLogs: Array.isArray(data.inventory.scannedLogs) ? data.inventory.scannedLogs : [],
               copiedIndivids: Array.isArray(data.inventory.copiedIndivids) ? data.inventory.copiedIndivids : [],
+              copiedSpareArtnrs: Array.isArray(data.inventory.copiedSpareArtnrs) ? data.inventory.copiedSpareArtnrs : [],
               rekondActivities: Array.isArray(data.inventory.rekondActivities) ? data.inventory.rekondActivities : [],
               rekondCount: Array.isArray(data.inventory.rekondCount) ? data.inventory.rekondCount : [],
               licensslut: (data.inventory.licensslut && typeof data.inventory.licensslut === 'object') ? data.inventory.licensslut : defaultState.inventory.licensslut,
@@ -2990,6 +2992,7 @@
             systemItems: Array.isArray(p.systemItems) ? p.systemItems : [],
             scannedLogs: Array.isArray(p.scannedLogs) ? p.scannedLogs : [],
             copiedIndivids: Array.isArray(p.copiedIndivids) ? p.copiedIndivids : [],
+            copiedSpareArtnrs: Array.isArray(p.copiedSpareArtnrs) ? p.copiedSpareArtnrs : [],
             rekondActivities: Array.isArray(p.rekondActivities) ? p.rekondActivities : [],
             rekondCount: Array.isArray(p.rekondCount) ? p.rekondCount : [],
             licensslut: (p.licensslut && typeof p.licensslut === 'object') ? p.licensslut : defaultState.inventory.licensslut,
@@ -3277,6 +3280,7 @@
       if (!Array.isArray(state.inventory.systemItems)) state.inventory.systemItems = [];
       if (!Array.isArray(state.inventory.scannedLogs)) state.inventory.scannedLogs = [];
       if (!Array.isArray(state.inventory.copiedIndivids)) state.inventory.copiedIndivids = [];
+      if (!Array.isArray(state.inventory.copiedSpareArtnrs)) state.inventory.copiedSpareArtnrs = [];
       if (!Array.isArray(state.inventory.rekondActivities)) state.inventory.rekondActivities = [];
       if (!Array.isArray(state.inventory.rekondCount)) {
         state.inventory.rekondCount = [];
@@ -5276,6 +5280,39 @@
       document.body.removeChild(ta);
     }
 
+    async function markSpareArtnrAsCopied(text) {
+      ensureInventoryStruct();
+      if (!state.inventory.copiedSpareArtnrs.includes(text)) {
+        state.inventory.copiedSpareArtnrs.push(text);
+        await syncInventoryToSupabase();
+      }
+      renderSparePartsTable();
+    }
+
+    function copySparePartArtnr(val) {
+      const text = String(val || '').trim();
+      if (!text || text === '-' || text === '—') return;
+      markSpareArtnrAsCopied(text);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(`Kopierade artikelnummer: ${text}`);
+        }).catch(() => fallbackCopySpareArtnr(text));
+      } else {
+        fallbackCopySpareArtnr(text);
+      }
+    }
+
+    function fallbackCopySpareArtnr(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showToast(`Kopierade artikelnummer: ${text}`); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
     function dismissScanFeedback() {
       const box = document.getElementById('inv-scan-feedback');
       if (box) box.classList.add('hidden');
@@ -6226,13 +6263,21 @@
         `;
         return;
       }
-      tbody.innerHTML = state.inventory.spareParts.map((sp, idx) => `
+      tbody.innerHTML = state.inventory.spareParts.map((sp, idx) => {
+        const safeArtnr = String(sp.artnr || '').replace(/'/g, "\\'");
+        const isCopied = (state.inventory.copiedSpareArtnrs || []).includes(String(sp.artnr || '').trim());
+        return `
         <tr class="bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
           <td class="py-1.5 px-2.5">
-            <div class="mb-0.5">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-brand-600 text-white font-mono font-extrabold text-xs shadow-sm">
+            <div class="inline-flex items-center gap-1.5 mb-0.5">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-mono font-extrabold text-xs shadow-sm cursor-pointer transition" onclick="copySparePartArtnr('${safeArtnr}')" title="Klicka för att kopiera artikelnummer ${sp.artnr || ''}">
                 ${sp.artnr || '—'}
               </span>
+              ${sp.artnr && sp.artnr !== '—' && sp.artnr !== '-' ? `
+                <button type="button" onclick="copySparePartArtnr('${safeArtnr}')" class="w-6 h-6 rounded-lg ${isCopied ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-slate-700/80 text-slate-400'} hover:bg-blue-600 hover:text-white flex items-center justify-center transition" title="Kopiera artikelnummer">
+                  <i class="fa-regular fa-copy text-[11px]"></i>
+                </button>
+              ` : ''}
             </div>
             <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${sp.name || 'Reservdel'}</div>
           </td>
@@ -6247,7 +6292,8 @@
             <button type="button" onclick="deleteSparePartRow(${idx})" class="w-6 h-6 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition inline-flex items-center justify-center" title="Ta bort del"><i class="fa-solid fa-trash text-[10px]"></i></button>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     }
 
     async function stepSparePartCount(idx, delta) {
