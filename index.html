@@ -720,12 +720,13 @@
 
         <!-- Sök & Filter i pivottabellen -->
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          <div class="sm:col-span-8 relative">
-            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-            <input id="rekond-count-search" type="text" oninput="renderRekondCountPivot()" placeholder="Filtrera på artikelnummer eller benämning..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <div class="sm:col-span-8">
+            <select id="rekond-count-benamning-select" onchange="renderRekondCountPivot()" class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm truncate">
+              <option value="all">Alla benämningar</option>
+            </select>
           </div>
           <div class="sm:col-span-4">
-            <select id="rekond-count-user-filter" onchange="renderRekondCountPivot()" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <select id="rekond-count-user-filter" onchange="renderRekondCountPivot()" class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm">
               <option value="all">Alla (gorag1 & matol39)</option>
               <option value="gorag1">Endast gorag1 (Goran)</option>
               <option value="matol39">Endast matol39 (Mats)</option>
@@ -3556,7 +3557,52 @@
       showToast(`Tog bort "${rubrikName}" från ${dateKey}.`);
     }
 
-    // ==================== ANTAL REKONDADE (PIVOTTABELL GORAG1 & MATOL39) ====================
+        // ==================== ANTAL REKONDADE (PIVOTTABELL GORAG1 & MATOL39) ====================
+    function populateRekondCountBenamningOptions() {
+      const select = document.getElementById('rekond-count-benamning-select');
+      if (!select) return;
+
+      const currentVal = select.value || 'all';
+      const rawList = state.inventory.rekondCount || [];
+
+      const uniqueItems = [];
+      const seen = new Set();
+
+      rawList.forEach(item => {
+        const b = (item.benamning || '').trim();
+        const art = (item.artikel || '').trim();
+        const key = art ? `${art}|||${b}` : b;
+        if (b && !seen.has(key)) {
+          seen.add(key);
+          uniqueItems.push({ art, benamning: b, key });
+        }
+      });
+
+      // Sortera efter fastställd artikelordning eller alfabetiskt
+      uniqueItems.sort((a, b) => {
+        const idxA = REKOND_COUNT_ARTICLE_ORDER.indexOf(a.art);
+        const idxB = REKOND_COUNT_ARTICLE_ORDER.indexOf(b.art);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.benamning.localeCompare(b.benamning, 'sv');
+      });
+
+      let optionsHtml = '<option value="all">Alla benämningar</option>';
+      uniqueItems.forEach(u => {
+        const safeVal = u.key.replace(/"/g, '&quot;');
+        const label = u.art ? `${u.benamning} (${u.art})` : u.benamning;
+        optionsHtml += `<option value="${safeVal}">${label}</option>`;
+      });
+
+      select.innerHTML = optionsHtml;
+      if (seen.has(currentVal)) {
+        select.value = currentVal;
+      } else {
+        select.value = 'all';
+      }
+    }
+
     function renderRekondCountPivot() {
       ensureInventoryStruct();
       const tbody = document.getElementById('rekond-count-tbody');
@@ -3564,16 +3610,26 @@
       if (!tbody || !tfoot) return;
 
       const rawList = state.inventory.rekondCount || [];
-      const q = (document.getElementById('rekond-count-search')?.value || '').toLowerCase().trim();
+      const selectEl = document.getElementById('rekond-count-benamning-select');
+      if (selectEl && selectEl.options.length <= 1 && rawList.length > 0) {
+        populateRekondCountBenamningOptions();
+      }
+
+      const selectedVal = selectEl?.value || 'all';
       const userFilter = document.getElementById('rekond-count-user-filter')?.value || 'all';
 
       const filtered = rawList.filter(item => {
         if (userFilter !== 'all' && (item.utfortAv || '').toLowerCase() !== userFilter) return false;
-        if (q) {
-          const art = (item.artikel || '').toLowerCase();
-          const name = (item.benamning || '').toLowerCase();
-          const user = (item.utfortAv || '').toLowerCase();
-          if (!art.includes(q) && !name.includes(q) && !user.includes(q)) return false;
+        if (selectedVal !== 'all') {
+          if (selectedVal.includes('|||')) {
+            const [selArt, selName] = selectedVal.split('|||');
+            if (selArt && (item.artikel || '').trim() !== selArt) return false;
+            if (selName && (item.benamning || '').trim() !== selName) return false;
+          } else {
+            const itemB = (item.benamning || '').trim();
+            const itemArt = (item.artikel || '').trim();
+            if (itemB !== selectedVal && itemArt !== selectedVal) return false;
+          }
         }
         return true;
       });
