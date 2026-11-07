@@ -7,6 +7,13 @@
   <link rel="icon" type="image/svg+xml" href="/icon-192x192.svg" />
   <link rel="apple-touch-icon" href="/icon-192x192.png" />
   <link rel="manifest" href="/manifest.json" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
   <title>Digitala Hjälpmedel Portalen</title>
 
   <!-- Tailwind CSS -->
