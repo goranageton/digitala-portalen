@@ -1766,23 +1766,23 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <button type="button" onclick="openAddCatalogArticleModal()" class="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition" title="Lägg till en ny artikel i tillbehörskatalogen">
+          <button type="button" onclick="openAddCatalogArticleModal()" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition" title="Lägg till en ny artikel i tillbehörskatalogen">
             <i class="fa-solid fa-plus"></i>
             <span>Ny artikel</span>
           </button>
-          <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition">
-            <i class="fa-solid fa-file-excel"></i>
+          <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-[#1e293b] hover:bg-slate-700 border border-[#334155] text-white text-xs font-bold flex items-center gap-1.5 shadow transition">
+            <i class="fa-solid fa-file-excel text-emerald-400"></i>
             <span>Importera Excel</span>
             <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleAccessoriesExcelUpload(event)" />
           </label>
-          <button type="button" onclick="openPasteAccessoriesModal()" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition">
-            <i class="fa-solid fa-paste"></i>
+          <button type="button" onclick="openPasteAccessoriesModal()" class="px-3 py-1.5 rounded-xl bg-[#1e293b] hover:bg-slate-700 border border-[#334155] text-white text-xs font-bold flex items-center gap-1.5 shadow transition">
+            <i class="fa-solid fa-paste text-indigo-400"></i>
             <span>Klistra in Excel</span>
           </button>
-          <button type="button" onclick="addManualSparePartRow()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-bold text-slate-600 dark:text-slate-200 transition" title="Skapa en tom manuell rad i reservdelar">
+          <button type="button" onclick="addManualSparePartRow()" class="px-2.5 py-1.5 rounded-xl bg-[#1e293b] hover:bg-slate-700 border border-[#334155] text-xs font-bold text-white transition" title="Skapa en tom manuell rad i reservdelar">
             <i class="fa-solid fa-plus mr-1"></i>Tom rad
           </button>
-          <button type="button" onclick="closeSparePartsModal()" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-rose-500 hover:text-white flex items-center justify-center transition">
+          <button type="button" onclick="closeSparePartsModal()" class="w-8 h-8 rounded-xl bg-[#1e293b] hover:bg-rose-500 border border-[#334155] hover:border-rose-500 text-slate-300 hover:text-white flex items-center justify-center transition">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -6507,30 +6507,30 @@
         const isHuvud = (item.typ || '').trim().toLowerCase() === 'huvudartikel';
 
         return `
-          <tr class="${isHuvud ? 'bg-purple-500/10 hover:bg-purple-500/15 dark:bg-purple-950/25 dark:hover:bg-purple-900/35 border-b border-purple-300/40 dark:border-purple-800/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800'} transition text-xs">
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 transition text-xs" style="${isHuvud ? 'border-left: 3px solid #8b5cf6;' : ''}">
             <td class="py-2.5 px-3 text-center">
-              <input type="checkbox" id="acc_chk_${item.artnr}" onchange="toggleAccessoryCheck('${safeArtnr}', this.checked)" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded ${isHuvud ? 'text-purple-600 focus:ring-purple-500' : 'text-brand-600 focus:ring-brand-500'} cursor-pointer" />
+              <input type="checkbox" id="acc_chk_${item.artnr}" onchange="toggleAccessoryCheck('${safeArtnr}', this.checked)" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer" />
             </td>
-            <td class="py-2.5 px-3 font-mono font-extrabold ${isHuvud ? 'text-purple-600 dark:text-purple-300 font-black' : 'text-slate-800 dark:text-slate-100 font-bold'}">${item.artnr}</td>
+            <td class="py-2.5 px-3 font-mono font-extrabold text-slate-800 dark:text-slate-100 font-bold">${item.artnr}</td>
             <td class="py-2.5 px-3">
-              <div class="font-bold flex items-center gap-1.5 ${isHuvud ? 'text-purple-600 dark:text-purple-300' : 'text-slate-900 dark:text-white'}">
-                ${isHuvud ? '<i class="fa-solid fa-star text-purple-500 dark:text-purple-400 text-[10px]"></i>' : ''}
+              <div class="font-bold flex items-center gap-1.5 text-slate-900 dark:text-white">
+                ${isHuvud ? '<i class="fa-solid fa-star text-purple-400 text-[10px]" title="Huvudartikel"></i>' : ''}
                 <span>${item.name}</span>
               </div>
               ${item.liggplats && item.liggplats !== '–' && item.liggplats !== '-' ? `
-                <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono mt-0.5 ${isHuvud ? 'bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'}">
+                <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono mt-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
                   <i class="fa-solid fa-location-dot mr-1"></i>${item.liggplats}
                 </span>` : ''}
             </td>
             <td class="py-2.5 px-3">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                isHuvud ? 'bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/30 shadow-sm' :
-                item.typ === 'Tillbehör' ? 'bg-sky-500/15 text-sky-600 dark:text-sky-300' :
-                item.typ === 'Förbrukning' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-300' :
-                item.typ === 'Emballage' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300' :
-                'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                isHuvud ? 'bg-purple-950/40 text-purple-300 border border-purple-800/40' :
+                item.typ === 'Tillbehör' ? 'bg-sky-950/40 text-sky-300 border border-sky-800/40' :
+                item.typ === 'Förbrukning' ? 'bg-amber-950/40 text-amber-300 border border-amber-800/40' :
+                item.typ === 'Emballage' ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-800/40' :
+                'bg-slate-800/60 text-slate-300 border border-slate-700/50'
               }">${item.typ || 'Tillbehör'}</span>
-              <div class="text-[11px] ${isHuvud ? 'text-purple-400 dark:text-purple-300/80 font-semibold' : 'text-slate-400'} mt-0.5">${item.kategori || ''}</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">${item.kategori || ''}</div>
             </td>
             <td class="py-2.5 px-3">
               <div class="flex items-center justify-center gap-1">
@@ -6541,7 +6541,7 @@
             </td>
             <td class="py-2.5 px-3 text-right">
               <div class="flex items-center justify-end gap-1.5">
-                <button type="button" onclick="addSingleAccessory('${safeArtnr}')" class="px-3 py-1 rounded-lg ${isHuvud ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/20' : 'bg-brand-600 hover:bg-brand-500 shadow-brand-600/20'} text-white font-bold text-xs flex items-center gap-1 shadow-sm transition">
+                <button type="button" onclick="addSingleAccessory('${safeArtnr}')" class="px-3 py-1 rounded-lg bg-[#1e293b] hover:bg-[#2563eb] border border-[#334155] hover:border-[#2563eb] text-white font-bold text-xs flex items-center gap-1 shadow-sm transition">
                   <i class="fa-solid fa-plus text-[10px]"></i>
                   <span>Lägg till</span>
                 </button>
