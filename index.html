@@ -7186,7 +7186,7 @@
       const imgContainer = document.getElementById('guide-images-preview');
       imgContainer.innerHTML = tempGuideImages.map((img, i) => `
         <div class="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-600">
-          <img src="${resolveImageSrc(img)}" class="w-full h-full object-cover" />
+          <img src="${resolveImageSrc(img)}" loading="lazy" decoding="async" class="w-full h-full object-cover" />
           <button type="button" onclick="removeTempImage(${i})" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] flex items-center justify-center">
             <i class="fa-solid fa-xmark"></i>
           </button>
@@ -7358,7 +7358,7 @@
       if (imgs.length) {
         imgSec.classList.remove('hidden');
         imgGrid.innerHTML = imgs.map((src, idx) => `
-          <img src="${src}" onclick="openLightbox('${g.id}', ${idx})" class="cursor-pointer w-full h-40 object-cover rounded-2xl border border-slate-200 dark:border-slate-700 hover:scale-[1.02] transition" />
+          <img src="${src}" loading="lazy" decoding="async" onclick="openLightbox('${g.id}', ${idx})" class="cursor-pointer w-full h-40 object-cover rounded-2xl border border-slate-200 dark:border-slate-700 hover:scale-[1.02] transition" />
         `).join('');
       } else {
         imgSec.classList.add('hidden');
@@ -7557,7 +7557,7 @@
               ${imgs.length ? `
                 <div class="flex items-center gap-2 overflow-x-auto pt-0.5 custom-scrollbar" onclick="event.stopPropagation()">
                   ${imgs.map((src, idx) => `
-                    <img src="${src}" onclick="openLightbox('${guide.id}', ${idx}); event.stopPropagation();" class="cursor-pointer w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 hover:opacity-85 transition" />
+                    <img src="${src}" loading="lazy" decoding="async" onclick="openLightbox('${guide.id}', ${idx}); event.stopPropagation();" class="cursor-pointer w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 hover:opacity-85 transition" />
                   `).join('')}
                 </div>
               ` : ''}
