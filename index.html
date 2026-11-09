@@ -533,11 +533,12 @@
         <!-- Själva Pivottabellen (Excel-liknande stil) -->
         <div class="overflow-x-auto overflow-y-auto custom-scrollbar rounded-2xl border border-slate-300 dark:border-slate-700 max-h-[540px] shadow-inner">
           <table class="w-full text-left border-collapse">
-            <thead class="sticky top-0 z-10 bg-sky-100 dark:bg-sky-950/95 text-slate-800 dark:text-sky-200 text-xs font-extrabold border-b-2 border-sky-300 dark:border-sky-700">
+            <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-sky-200 text-xs font-extrabold border-b-2 border-slate-300 dark:border-slate-700 select-none">
               <tr>
-                <th class="py-3 px-4">Radetiketter (Planerat datum / Rubrik)</th>
-                <th class="py-3 px-5 w-44 text-right">Antal av Rubrik</th>
-                <th class="py-3 px-3 w-16 text-center">Åtgärd</th>
+                <th class="py-3 px-4 border-r border-slate-200 dark:border-slate-800">Datum / Benämning</th>
+                <th class="py-3 px-3 w-32 sm:w-36 text-center border-r border-slate-200 dark:border-slate-800">Artnr</th>
+                <th class="py-3 px-4 w-28 sm:w-32 text-right border-r border-slate-200 dark:border-slate-800">Antal</th>
+                <th class="py-3 px-3 w-20 text-center">Åtgärd</th>
               </tr>
             </thead>
             <tbody id="rekond-pivot-tbody" class="divide-y divide-slate-200/70 dark:divide-slate-800 text-xs sm:text-sm"></tbody>
@@ -3592,6 +3593,69 @@
       });
     }
 
+    function resolveArtnrForRubrik(rubrik, item = null) {
+      if (item && (item.artnr || item.artikel)) {
+        const direct = cleanCellText(item.artnr || item.artikel);
+        if (direct && direct !== '-') return direct;
+      }
+      const cleanR = cleanCellText(rubrik || '');
+      if (!cleanR) return '-';
+
+      // 1. Kolla om rubriken redan börjar med artikelnummer (t.ex. "82730 - A&D 656")
+      const leadingMatch = cleanR.match(/^(\d{5,6})\b/);
+      if (leadingMatch) return leadingMatch[1];
+
+      const normR = cleanR.toLowerCase();
+
+      // 2. Sök i systemItems (användarens inlästa grunddata)
+      if (state.inventory && Array.isArray(state.inventory.systemItems)) {
+        const sysMatch = state.inventory.systemItems.find(s => {
+          const b = (s.benamning || '').toLowerCase();
+          return b === normR || (b.length > 5 && (b.includes(normR) || normR.includes(b)));
+        });
+        if (sysMatch && sysMatch.artikel) return cleanCellText(sysMatch.artikel);
+      }
+
+      // 3. Sök i accessoriesCatalog / DEFAULT_ACCESSORIES_CATALOG
+      const catalog = (state.inventory && state.inventory.accessoriesCatalog) || DEFAULT_ACCESSORIES_CATALOG || [];
+      for (const a of catalog) {
+        const n = (a.name || '').toLowerCase();
+        if (n === normR || (n.length > 5 && (n.includes(normR) || normR.includes(n)))) {
+          return cleanCellText(a.artnr);
+        }
+      }
+
+      // Token overlap i tillbehörskatalogen för att hitta matchning trots små texts killnader
+      const rTokens = normR.split(/[^a-z0-9åäö]+/i).filter(t => t.length > 2);
+      let bestCat = null;
+      let maxCatMatches = 1;
+      for (const a of catalog) {
+        const nTokens = (a.name || '').toLowerCase().split(/[^a-z0-9åäö]+/i).filter(t => t.length > 2);
+        const matches = rTokens.filter(t => nTokens.includes(t)).length;
+        if (matches > maxCatMatches) {
+          maxCatMatches = matches;
+          bestCat = a.artnr;
+        }
+      }
+      if (bestCat && maxCatMatches >= 2) return cleanCellText(bestCat);
+
+      // 4. Sök i ARTICLE_DEFAULT_NAMES
+      if (typeof ARTICLE_DEFAULT_NAMES === 'object') {
+        for (const [art, name] of Object.entries(ARTICLE_DEFAULT_NAMES)) {
+          const n = (name || '').toLowerCase();
+          if (n === normR || (n.length > 5 && (n.includes(normR) || normR.includes(n)))) {
+            return art;
+          }
+        }
+      }
+
+      // 5. Fristående 5- eller 6-siffrigt nummer i texten
+      const embeddedMatch = cleanR.match(/\b(\d{5,6})\b/);
+      if (embeddedMatch) return embeddedMatch[1];
+
+      return '-';
+    }
+
     function renderRekondActivityPivot() {
       ensureInventoryStruct();
       const tbody = document.getElementById('rekond-pivot-tbody');
@@ -3603,10 +3667,13 @@
 
       const filteredList = rawList.filter(item => {
         if (!q) return true;
-        return (item.date || '').toLowerCase().includes(q) || (item.rubrik || '').toLowerCase().includes(q);
+        const d = (item.date || '').toLowerCase();
+        const r = (item.rubrik || '').toLowerCase();
+        const a = (item.artnr || resolveArtnrForRubrik(item.rubrik, item)).toLowerCase();
+        return d.includes(q) || r.includes(q) || a.includes(q);
       });
 
-      // Gruppera per Planerat datum -> Rubrik
+      // Gruppera per Planerat datum -> Rubrik / Artikel
       const grouped = {};
       let grandTotal = 0;
       const uniqueRubrikerSet = new Set();
@@ -3615,10 +3682,19 @@
         const d = item.date || 'Ej angivet datum';
         const r = item.rubrik || 'Okänd rubrik';
         const c = Number(item.count) || 1;
+        const art = item.artnr || resolveArtnrForRubrik(r, item);
 
-        if (!grouped[d]) grouped[d] = { total: 0, rubriker: {} };
+        if (!grouped[d]) grouped[d] = { total: 0, items: {} };
         grouped[d].total += c;
-        grouped[d].rubriker[r] = (grouped[d].rubriker[r] || 0) + c;
+
+        if (!grouped[d].items[r]) {
+          grouped[d].items[r] = { rubrik: r, artnr: art, count: 0 };
+        }
+        grouped[d].items[r].count += c;
+        if (art && art !== '-' && (!grouped[d].items[r].artnr || grouped[d].items[r].artnr === '-')) {
+          grouped[d].items[r].artnr = art;
+        }
+
         grandTotal += c;
         uniqueRubrikerSet.add(r);
       });
@@ -3632,8 +3708,8 @@
       if (!sortedDates.length) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="3" class="py-12 px-4 text-center text-slate-400 font-semibold">
-              Ingen data i Rekondaktivitet ännu. Klicka på <strong>"Klistra in Excel"</strong> eller <strong>"Importera Excel"</strong> ovan (eller ladda exempeldata) för att skapa pivottabellen.
+            <td colspan="4" class="py-12 px-4 text-center text-slate-400 font-semibold">
+              Ingen data i planerade datum ännu. Klicka på <strong>"Klistra in Excel"</strong> eller <strong>"Importera Excel"</strong> ovan (eller ladda exempeldata).
             </td>
           </tr>
         `;
@@ -3646,38 +3722,60 @@
         const group = grouped[dateKey];
         const isCollapsed = Boolean(collapsedPivotDates[dateKey]);
         const safeDate = dateKey.replace(/'/g, "\\'");
+        const itemCount = Object.keys(group.items).length;
 
-        // Datumrad (fetmarkerad med +/- knapp precis som i Excel Pivottabell)
+        // 1. Datum-rad (huvudrad): Tydlig kontrast och avgränsning med fasta kolumner
         html += `
-          <tr onclick="togglePivotDateCollapse('${safeDate}')" class="cursor-pointer bg-slate-100/90 dark:bg-slate-800/95 hover:bg-sky-500/10 dark:hover:bg-sky-500/15 font-extrabold text-slate-900 dark:text-white border-t border-slate-300 dark:border-slate-700 transition select-none group">
-            <td class="py-2.5 px-4 flex items-center justify-between gap-2.5">
+          <tr onclick="togglePivotDateCollapse('${safeDate}')" class="cursor-pointer bg-slate-200/80 dark:bg-slate-800/90 hover:bg-sky-500/10 dark:hover:bg-sky-500/15 font-extrabold text-slate-900 dark:text-white border-t-2 border-slate-300 dark:border-slate-700 transition select-none group">
+            <td class="py-2.5 px-4 border-r border-slate-300/70 dark:border-slate-700/70">
               <div class="flex items-center gap-2.5">
-                <span class="w-5 h-5 rounded-md bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-600 dark:text-slate-200 shadow-sm">
+                <span class="w-5 h-5 rounded-md bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-700 dark:text-slate-200 shadow-sm shrink-0">
                   <i class="fa-solid ${isCollapsed ? 'fa-plus' : 'fa-minus'}"></i>
                 </span>
-                <span class="tracking-tight">${dateKey}</span>
+                <span class="text-xs sm:text-sm font-black tracking-tight text-slate-900 dark:text-white">${dateKey}</span>
+                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">(${itemCount} ${itemCount === 1 ? 'artikel' : 'artiklar'})</span>
               </div>
             </td>
-            <td class="py-2.5 px-5 text-right font-mono text-sm font-black text-sky-700 dark:text-sky-300">${group.total}</td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-300/70 dark:border-slate-700/70">
+              <span class="text-slate-400 font-mono text-xs">–</span>
+            </td>
+            <td class="py-2.5 px-4 text-right font-mono text-sm font-black text-sky-700 dark:text-sky-300 border-r border-slate-300/70 dark:border-slate-700/70">
+              ${group.total}
+            </td>
             <td class="py-2.5 px-3 text-center">
-              <button type="button" onclick="event.stopPropagation(); deleteRekondPivotDate('${safeDate}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition inline-flex items-center justify-center" title="Ta bort hela datumet ${dateKey}">
+              <button type="button" onclick="event.stopPropagation(); deleteRekondPivotDate('${safeDate}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/15 transition inline-flex items-center justify-center" title="Vill du radera alla poster för detta datum?">
                 <i class="fa-solid fa-trash-can text-xs"></i>
               </button>
             </td>
           </tr>
         `;
 
-        // Underliggande Rubrik-rader sorterade i bokstavsordning
+        // 2. Underrader (artiklar)
         if (!isCollapsed) {
-          const rubrikEntries = Object.entries(group.rubriker).sort((a, b) => a[0].localeCompare(b[0], 'sv'));
-          rubrikEntries.forEach(([rubrikName, count]) => {
-            const safeRubrik = rubrikName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+          const itemEntries = Object.values(group.items).sort((a, b) => a.rubrik.localeCompare(b.rubrik, 'sv'));
+          itemEntries.forEach(subItem => {
+            const safeRubrik = subItem.rubrik.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const artnrDisplay = subItem.artnr && subItem.artnr !== '-' ? subItem.artnr : '-';
             html += `
-              <tr class="bg-white dark:bg-slate-900/70 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
-                <td class="py-2 pl-11 pr-4 text-slate-700 dark:text-slate-200 font-medium">${rubrikName}</td>
-                <td class="py-2 px-5 text-right font-mono font-bold text-slate-800 dark:text-slate-100">${count}</td>
+              <tr class="bg-white/95 dark:bg-slate-900/70 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800/60 transition group">
+                <td class="py-2 pl-10 pr-4 text-slate-700 dark:text-slate-200 font-medium text-xs sm:text-sm border-r border-slate-200/60 dark:border-slate-800/80">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-turn-down-right text-[10px] text-slate-400/80 shrink-0"></i>
+                    <span class="truncate" title="${safeRubrik}">${subItem.rubrik}</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-center border-r border-slate-200/60 dark:border-slate-800/80">
+                  ${artnrDisplay !== '-' ? `
+                    <span class="inline-block px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono text-xs font-bold border border-slate-200 dark:border-slate-700">
+                      ${artnrDisplay}
+                    </span>
+                  ` : `<span class="text-slate-400 font-mono text-xs">–</span>`}
+                </td>
+                <td class="py-2 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100 text-xs sm:text-sm border-r border-slate-200/60 dark:border-slate-800/80">
+                  ${subItem.count}
+                </td>
                 <td class="py-2 px-3 text-center">
-                  <button type="button" onclick="deleteRekondPivotItem('${safeDate}', '${safeRubrik}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition inline-flex items-center justify-center" title="Ta bort '${safeRubrik}'">
+                  <button type="button" onclick="deleteRekondPivotItem('${safeDate}', '${safeRubrik}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition inline-flex items-center justify-center" title="Vill du radera artikeln?">
                     <i class="fa-solid fa-trash-can text-xs"></i>
                   </button>
                 </td>
@@ -3689,33 +3787,36 @@
 
       tbody.innerHTML = html;
       tfoot.innerHTML = `
-        <tr>
-          <td class="py-3 px-4">Totalsumma</td>
-          <td class="py-3 px-5 text-right font-mono text-base">${grandTotal}</td>
+        <tr class="bg-sky-200/90 dark:bg-sky-950/95 text-slate-900 dark:text-white font-black text-xs sm:text-sm border-t-2 border-sky-400 dark:border-sky-600">
+          <td class="py-3 px-4 border-r border-sky-300/60 dark:border-sky-800/80">Totalsumma</td>
+          <td class="py-3 px-3 text-center border-r border-sky-300/60 dark:border-sky-800/80"></td>
+          <td class="py-3 px-4 text-right font-mono text-base text-sky-900 dark:text-sky-300 border-r border-sky-300/60 dark:border-sky-800/80">${grandTotal}</td>
           <td class="py-3 px-3"></td>
         </tr>
       `;
     }
 
     async function deleteRekondPivotDate(dateKey) {
-      openConfirmModal('Ta bort datum', `Vill du ta bort datumet ${dateKey} och alla dess rubriker från Rekondaktivitet?`, async () => {
+      openConfirmModal('Radera datumgrupp', 'Vill du radera alla poster för detta datum?', async () => {
         ensureInventoryStruct();
         state.inventory.rekondActivities = state.inventory.rekondActivities.filter(item => (item.date || 'Ej angivet datum') !== dateKey);
         delete collapsedPivotDates[dateKey];
         await syncInventoryToSupabase();
         renderRekondActivityPivot();
-        showToast(`Tog bort datumet ${dateKey} från Rekondaktivitet.`);
+        showToast(`Tog bort alla poster för datumet ${dateKey}.`);
       });
     }
 
     async function deleteRekondPivotItem(dateKey, rubrikName) {
-      ensureInventoryStruct();
-      state.inventory.rekondActivities = state.inventory.rekondActivities.filter(
-        item => !((item.date || 'Ej angivet datum') === dateKey && (item.rubrik || 'Okänd rubrik') === rubrikName)
-      );
-      await syncInventoryToSupabase();
-      renderRekondActivityPivot();
-      showToast(`Tog bort "${rubrikName}" från ${dateKey}.`);
+      openConfirmModal('Radera artikel', 'Vill du radera artikeln?', async () => {
+        ensureInventoryStruct();
+        state.inventory.rekondActivities = state.inventory.rekondActivities.filter(
+          item => !((item.date || 'Ej angivet datum') === dateKey && (item.rubrik || 'Okänd rubrik') === rubrikName)
+        );
+        await syncInventoryToSupabase();
+        renderRekondActivityPivot();
+        showToast(`Tog bort "${rubrikName}" från ${dateKey}.`);
+      });
     }
 
         // ==================== ANTAL REKONDADE (PIVOTTABELL GORAG1 & MATOL39) ====================
@@ -5335,10 +5436,33 @@
       const value = decodeURIComponent(encodedValue);
       ensureInventoryStruct();
 
+      // Om man klickar på en Benämning i modalen, matcha mot dess Artikelnummer så att ALLA poster med det artikelnumret filtreras fram
+      if (field === 'benamning') {
+        const allItems = state.inventory.systemItems;
+        const matchedItem = allItems.find(item => getSlicerItemField(item, 'benamning') === value);
+        const art = matchedItem ? getSlicerItemField(matchedItem, 'artikel') : null;
+        if (art && art !== '-') {
+          return toggleSlicerFilterEncoded('artikel', encodeURIComponent(art));
+        }
+      }
+
       if (slicerFilters[field] === value) {
         slicerFilters[field] = null;
+        if (field === 'artikel') {
+          const artSelect = document.getElementById('inv-filter-article');
+          if (artSelect) artSelect.value = 'ALL';
+        }
       } else {
         slicerFilters[field] = value;
+        if (field === 'artikel') {
+          const artSelect = document.getElementById('inv-filter-article');
+          if (artSelect) {
+            if (![...artSelect.options].some(o => o.value === value)) {
+              artSelect.add(new Option(value, value));
+            }
+            artSelect.value = value;
+          }
+        }
 
         // Säkerställ att tidigare filter i andra rutor som inte matchar det nya valet rensas automatiskt
         // så att t.ex. ett klick på ett Artikelnummer alltid direkt visar dess Benämning, Serienummer och Individer
@@ -5377,6 +5501,8 @@
 
     function clearSlicerSelection() {
       slicerFilters = { benamning: null, artikel: null, serienummer: null, individ: null };
+      const artSelect = document.getElementById('inv-filter-article');
+      if (artSelect) artSelect.value = 'ALL';
       renderInventory();
     }
 
@@ -6024,6 +6150,38 @@
         : '-';
     }
 
+    function filterByStatArticle(artnr) {
+      ensureInventoryStruct();
+      if (!artnr || artnr === 'Okänd' || artnr === '-') return;
+
+      const artSelect = document.getElementById('inv-filter-article');
+      const curArt = (artSelect && artSelect.value !== 'ALL') ? artSelect.value : (slicerFilters.artikel || 'ALL');
+      const isAlreadyActive = curArt === artnr;
+      const targetArt = isAlreadyActive ? 'ALL' : artnr;
+
+      if (artSelect) {
+        if (targetArt !== 'ALL' && ![...artSelect.options].some(o => o.value === targetArt)) {
+          artSelect.add(new Option(targetArt, targetArt));
+        }
+        artSelect.value = targetArt;
+      }
+
+      if (targetArt === 'ALL') {
+        slicerFilters.artikel = null;
+        slicerFilters.benamning = null;
+      } else {
+        slicerFilters.artikel = targetArt;
+        slicerFilters.benamning = null; // Rensa eventuellt låst benämning så ALLA varianter av artikelnumret inkluderas
+        slicerFilters.serienummer = null;
+        slicerFilters.individ = null;
+      }
+
+      renderInventory();
+      if (document.getElementById('excel-slicer-panel') && !document.getElementById('excel-slicer-panel').classList.contains('hidden')) {
+        renderExcelSlicerPanel();
+      }
+    }
+
     function renderBenamningStats() {
       const container = document.getElementById('inv-benamning-stats');
       if (!container) return;
@@ -6042,36 +6200,84 @@
         return;
       }
 
-      const countsMap = {};
+      // 1. Gruppera alltid data på unikt artikelnummer (inte på textbenämning)
+      const groups = {};
       sourceItems.forEach(item => {
-        const benamning = resolveItemBenamning(item) || `Artikel ${item.artikel || 'Okänd'}`;
-        const artnr = (item.artikel || item.artikelnr || item.artnr || '').toString().trim();
-        let label = benamning;
-        if (mode === 'all') {
-          if (artnr && benamning && !benamning.startsWith(artnr)) {
-            label = `${artnr} - ${benamning}`;
-          } else if (artnr) {
-            label = artnr;
-          }
+        const artnr = cleanCellText(item.artikel || item.artikelnr || item.artnr || '').trim() || 'Okänd';
+        const benamning = cleanCellText(resolveItemBenamning(item) || item.benamning || '').trim();
+
+        if (!groups[artnr]) {
+          groups[artnr] = {
+            artnr,
+            count: 0,
+            namesCount: {},
+            firstName: benamning || 'Okänd'
+          };
         }
-        countsMap[label] = (countsMap[label] || 0) + 1;
+
+        groups[artnr].count += 1;
+        if (benamning) {
+          groups[artnr].namesCount[benamning] = (groups[artnr].namesCount[benamning] || 0) + 1;
+        }
       });
 
-      const sorted = Object.entries(countsMap).sort((a, b) => b[1] - a[1]);
-      const maxCount = Math.max(...sorted.map(x => x[1]), 1);
+      // Om det finns flera olika benämningar för samma artikelnummer, välj benämningen från den variant som har flest förekomster (eller den första funna)
+      const list = Object.values(groups).map(g => {
+        let bestName = g.firstName;
+        let maxOcc = 0;
+        for (const [name, occ] of Object.entries(g.namesCount)) {
+          if (occ > maxOcc) {
+            maxOcc = occ;
+            bestName = name;
+          }
+        }
 
-      container.innerHTML = sorted.map(([name, count]) => {
-        const pct = Math.max(6, Math.round((count / maxCount) * 100));
+        // Visningsformat: "[Artnr] - [Benämning]"
+        let displayName = bestName;
+        if (g.artnr && g.artnr !== 'Okänd') {
+          if (!bestName.startsWith(g.artnr)) {
+            displayName = `${g.artnr} - ${bestName}`;
+          }
+        }
+
+        return {
+          artnr: g.artnr,
+          benamning: bestName,
+          displayName,
+          count: g.count
+        };
+      });
+
+      // 2. Sortera listan fallande baserat på det totalt summerade antalet per artikelnummer (störst antal överst)
+      list.sort((a, b) => b.count - a.count);
+
+      const maxCount = Math.max(...list.map(x => x.count), 1);
+      const currentFilteredArt = (document.getElementById('inv-filter-article')?.value !== 'ALL'
+        ? document.getElementById('inv-filter-article')?.value
+        : slicerFilters.artikel) || null;
+
+      container.innerHTML = list.map(item => {
+        const pct = Math.max(6, Math.round((item.count / maxCount) * 100));
+        const isSelected = Boolean(currentFilteredArt && item.artnr !== 'Okänd' && currentFilteredArt === item.artnr);
+        const safeArtnr = String(item.artnr).replace(/'/g, "\\'");
+        const safeName = String(item.displayName).replace(/"/g, '&quot;');
+
         return `
-          <div class="grid grid-cols-12 items-center gap-3 text-xs py-1">
-            <div class="col-span-6 truncate text-slate-700 dark:text-slate-200 font-semibold" title="${name}">
-              ${name}
+          <div onclick="filterByStatArticle('${safeArtnr}')"
+               class="grid grid-cols-12 items-center gap-3 text-xs py-1 px-1.5 rounded-lg cursor-pointer transition ${
+                 isSelected
+                   ? 'bg-brand-500/15 dark:bg-brand-500/20 ring-1 ring-brand-500/40 text-brand-600 dark:text-brand-300'
+                   : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
+               }"
+               title="${safeName} (Klicka för att filtrera)">
+            <div class="col-span-6 truncate font-semibold ${isSelected ? 'text-brand-600 dark:text-brand-300 font-bold' : 'text-slate-700 dark:text-slate-200'}">
+              ${item.displayName}
             </div>
             <div class="col-span-4 bg-slate-100 dark:bg-slate-900 rounded-md h-4 overflow-hidden p-0.5 border border-slate-200/60 dark:border-slate-700/60">
               <div class="h-full bg-gradient-to-r from-brand-500 to-indigo-400 rounded-sm transition-all duration-300" style="width: ${pct}%"></div>
             </div>
-            <div class="col-span-2 text-right font-extrabold text-slate-800 dark:text-slate-100">
-              ${count}
+            <div class="col-span-2 text-right font-extrabold ${isSelected ? 'text-brand-600 dark:text-brand-300' : 'text-slate-800 dark:text-slate-100'}">
+              ${item.count}
             </div>
           </div>
         `;
