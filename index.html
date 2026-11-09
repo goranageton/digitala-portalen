@@ -628,7 +628,7 @@
           <!-- Statistik på Benämning (Kompakt sidokort) -->
           <div class="bg-white dark:bg-slate-900/90 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80 p-3 space-y-2">
             <div class="flex items-center justify-between gap-1 border-b border-slate-100 dark:border-slate-800 pb-1.5">
-              <span class="text-[10px] font-mono font-extrabold uppercase tracking-wider text-slate-400">Antal per benämning</span>
+              <span class="text-[10px] font-mono font-extrabold uppercase tracking-wider text-slate-400">Antal per benämning/artnr</span>
               <select id="inv-benamning-stat-mode" onchange="renderInventory()" class="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[11px] font-bold">
                 <option value="checked">Avprickade</option>
                 <option value="all">Totalt i system</option>
@@ -6044,7 +6044,16 @@
 
       const countsMap = {};
       sourceItems.forEach(item => {
-        const label = resolveItemBenamning(item) || `Artikel ${item.artikel || 'Okänd'}`;
+        const benamning = resolveItemBenamning(item) || `Artikel ${item.artikel || 'Okänd'}`;
+        const artnr = (item.artikel || item.artikelnr || item.artnr || '').toString().trim();
+        let label = benamning;
+        if (mode === 'all') {
+          if (artnr && benamning && !benamning.startsWith(artnr)) {
+            label = `${artnr} - ${benamning}`;
+          } else if (artnr) {
+            label = artnr;
+          }
+        }
         countsMap[label] = (countsMap[label] || 0) + 1;
       });
 
