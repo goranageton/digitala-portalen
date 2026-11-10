@@ -5606,6 +5606,7 @@
         const dimmed = slicerFilters.artikel && !active;
         const enc = encodeURIComponent(item.artnr);
         const safeName = item.benamning.replace(/"/g, '&quot;');
+        const isStar = String(item.artnr).trim() === '90341';
         return `
           <button type="button" onclick="toggleSlicerFilterEncoded('artikel', '${enc}')"
             class="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition border ${
@@ -5615,7 +5616,7 @@
                 ? 'bg-slate-200/40 dark:bg-slate-800/40 text-slate-400 border-transparent opacity-60 hover:opacity-100'
                 : 'bg-sky-500/10 hover:bg-sky-500/20 text-slate-700 dark:text-sky-100 border-sky-500/20'
             }" title="${safeName}">
-            <span class="truncate">${item.benamning}</span>
+            <span class="truncate">${isStar ? '⭐ ' : ''}${item.benamning}</span>
             <span class="px-1.5 py-0.2 rounded-md text-[10px] font-extrabold shrink-0 ${active ? 'bg-white/20 text-white' : 'bg-sky-500/20 text-sky-600 dark:text-sky-300'}">${item.totalCount}</span>
           </button>
         `;
@@ -5627,6 +5628,7 @@
         const active = slicerFilters.artikel === item.artnr;
         const dimmed = slicerFilters.artikel && !active;
         const enc = encodeURIComponent(item.artnr);
+        const isStar = String(item.artnr).trim() === '90341';
         return `
           <button type="button" onclick="toggleSlicerFilterEncoded('artikel', '${enc}')"
             class="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center justify-between gap-2 transition border ${
@@ -5636,7 +5638,7 @@
                 ? 'bg-slate-200/40 dark:bg-slate-800/40 text-slate-400 border-transparent opacity-60 hover:opacity-100'
                 : 'bg-sky-500/10 hover:bg-sky-500/20 text-slate-700 dark:text-sky-100 border-sky-500/20'
             }">
-            <span class="truncate">${item.artnr}</span>
+            <span class="truncate">${isStar ? '⭐ ' : ''}${item.artnr}</span>
             <span class="px-1.5 py-0.2 rounded-md text-[10px] font-sans font-extrabold shrink-0 ${active ? 'bg-white/20 text-white' : 'bg-sky-500/20 text-sky-600 dark:text-sky-300'}">${item.totalCount}</span>
           </button>
         `;
