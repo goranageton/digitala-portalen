@@ -116,6 +116,25 @@
       background-color: rgba(20, 184, 166, 0.08) !important;
       transform: scale(1.005);
     }
+    /* Drag & Drop för länkkort */
+    .link-card {
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s, border-color 0.2s, background-color 0.2s, opacity 0.2s;
+    }
+    .link-card.is-dragging {
+      opacity: 0.35 !important;
+      transform: scale(0.97) !important;
+      border-style: dashed !important;
+      border-width: 2px !important;
+      border-color: #6366f1 !important;
+      background-color: rgba(99, 102, 241, 0.06) !important;
+    }
+    .link-card.drag-over {
+      border-color: #6366f1 !important;
+      border-width: 2px !important;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.45), 0 20px 25px -5px rgba(0, 0, 0, 0.25) !important;
+      background-color: rgba(99, 102, 241, 0.1) !important;
+      transform: translateY(-4px) scale(1.02) !important;
+    }
   </style>
 </head>
 
@@ -2811,6 +2830,33 @@
       });
     }
 
+    function applyLinksOrder(links) {
+      if (!Array.isArray(links)) return [];
+      try {
+        const rawOrder = localStorage.getItem('dh_links_order');
+        if (!rawOrder) return links;
+        const order = JSON.parse(rawOrder);
+        if (!Array.isArray(order) || !order.length) return links;
+        const orderMap = new Map();
+        order.forEach((id, idx) => orderMap.set(String(id), idx));
+        return [...links].sort((a, b) => {
+          const idxA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
+          const idxB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
+          return idxA - idxB;
+        });
+      } catch (e) {
+        return links;
+      }
+    }
+
+    async function saveLinksOrder() {
+      try {
+        const order = state.links.map(l => String(l.id));
+        localStorage.setItem('dh_links_order', JSON.stringify(order));
+      } catch (e) {}
+      await saveState();
+    }
+
     async function saveState() {
       try {
         const db = await openLocalDB();
@@ -2839,7 +2885,7 @@
         if (data && typeof data === 'object') {
           state = {
             categories: Array.isArray(data.categories) && data.categories.length ? data.categories : defaultState.categories,
-            links: Array.isArray(data.links) ? data.links : defaultState.links,
+            links: applyLinksOrder(Array.isArray(data.links) ? data.links : defaultState.links),
             guides: Array.isArray(data.guides) ? data.guides : [],
             notes: Array.isArray(data.notes) ? data.notes : [],
             inventory: data.inventory && typeof data.inventory === 'object' ? {
@@ -2865,7 +2911,7 @@
           const parsed = JSON.parse(raw);
           state = {
             categories: parsed.categories || defaultState.categories,
-            links: parsed.links || defaultState.links,
+            links: applyLinksOrder(parsed.links || defaultState.links),
             guides: parsed.guides || [],
             notes: parsed.notes || [],
             inventory: parsed.inventory || JSON.parse(JSON.stringify(defaultState.inventory))
@@ -2961,13 +3007,14 @@
           state.categories = catRes.data.map(c => c.name);
         }
         if (Array.isArray(linkRes.data)) {
-          state.links = linkRes.data.map(l => ({
+          const mappedLinks = linkRes.data.map(l => ({
             id: l.id,
             title: l.title,
             url: l.url,
             category: l.category || 'Övrigt',
             description: l.description || ''
           }));
+          state.links = applyLinksOrder(mappedLinks);
         }
         if (Array.isArray(guideRes.data)) {
           state.guides = guideRes.data.map(g => ({
@@ -7148,7 +7195,80 @@
       renderGuides();
     }
 
-    // ==================== VY 1: LÄNKAR ====================
+    // ==================== VY 1: LÄNKAR (DRAG & DROP) ====================
+    let draggedLinkId = null;
+    let touchDraggedLinkId = null;
+    let lastTouchTargetId = null;
+
+    function handleLinkDragStart(e, id) {
+      if (e.target.closest('a, button:not(.link-drag-handle)')) {
+        e.preventDefault();
+        return;
+      }
+      if (window.getSelection && window.getSelection().toString().trim().length > 0 && !e.target.closest('.link-drag-handle')) {
+        e.preventDefault();
+        return;
+      }
+      draggedLinkId = String(id);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(id));
+      const card = e.currentTarget;
+      setTimeout(() => {
+        if (card && String(draggedLinkId) === String(id)) {
+          card.classList.add('is-dragging');
+        }
+      }, 0);
+    }
+
+    function handleLinkDragOver(e, id) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (!draggedLinkId || String(draggedLinkId) === String(id)) return;
+      const card = e.currentTarget;
+      if (!card.classList.contains('drag-over')) {
+        document.querySelectorAll('#links-grid .link-card.drag-over').forEach(el => {
+          if (el !== card) el.classList.remove('drag-over');
+        });
+        card.classList.add('drag-over');
+      }
+    }
+
+    function handleLinkDragLeave(e) {
+      const card = e.currentTarget;
+      if (!card.contains(e.relatedTarget)) {
+        card.classList.remove('drag-over');
+      }
+    }
+
+    async function handleLinkDrop(e, targetId) {
+      e.preventDefault();
+      const sourceId = draggedLinkId || e.dataTransfer.getData('text/plain');
+      draggedLinkId = null;
+      document.querySelectorAll('#links-grid .link-card').forEach(el => {
+        el.classList.remove('is-dragging', 'drag-over');
+      });
+
+      if (!sourceId || String(sourceId) === String(targetId)) return;
+
+      const fromIdx = state.links.findIndex(x => String(x.id) === String(sourceId));
+      const toIdx = state.links.findIndex(x => String(x.id) === String(targetId));
+
+      if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+        const [moved] = state.links.splice(fromIdx, 1);
+        state.links.splice(toIdx, 0, moved);
+        await saveLinksOrder();
+        renderLinks();
+        showToast('Länkarnas ordning har sparats!');
+      }
+    }
+
+    function handleLinkDragEnd(e) {
+      draggedLinkId = null;
+      document.querySelectorAll('#links-grid .link-card').forEach(el => {
+        el.classList.remove('is-dragging', 'drag-over');
+      });
+    }
+
     function renderLinks() {
       const grid = document.getElementById('links-grid');
       const q = (document.getElementById('link-search')?.value || '').toLowerCase().trim();
@@ -7172,29 +7292,94 @@
         const favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
 
         return `
-          <div class="group bg-white dark:bg-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5">
+          <div class="link-card group bg-white dark:bg-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5"
+               data-link-id="${link.id}"
+               draggable="true"
+               ondragstart="handleLinkDragStart(event, '${link.id}')"
+               ondragover="handleLinkDragOver(event, '${link.id}')"
+               ondragleave="handleLinkDragLeave(event)"
+               ondrop="handleLinkDrop(event, '${link.id}')"
+               ondragend="handleLinkDragEnd(event)">
             <div>
               <div class="flex items-start justify-between gap-3 mb-3">
                 <div class="flex items-center gap-3 min-w-0">
-                  <img src="${favicon}" alt="" class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-700 p-1.5 object-contain shrink-0" onerror="this.src='https://placehold.co/40x40/312e81/ffffff?text=L'" />
+                  <img src="${favicon}" alt="" class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-700 p-1.5 object-contain shrink-0" onerror="this.src='https://placehold.co/40x40/312e81/ffffff?text=L'" draggable="false" />
                   <div class="min-w-0">
                     <h3 class="font-extrabold text-base truncate">${link.title}</h3>
                   </div>
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
-                  <button type="button" onclick="openLinkModal('${link.id}')" class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-brand-500"><i class="fa-solid fa-pen text-xs"></i></button>
-                  <button type="button" onclick="deleteLink('${link.id}')" class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash text-xs"></i></button>
+                  <button type="button" class="link-drag-handle w-8 h-8 rounded-xl flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Dra för att ändra ordning">
+                    <i class="fa-solid fa-grip-vertical text-xs"></i>
+                  </button>
+                  <button type="button" onclick="openLinkModal('${link.id}')" class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-brand-500" title="Redigera länk"><i class="fa-solid fa-pen text-xs"></i></button>
+                  <button type="button" onclick="deleteLink('${link.id}')" class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-rose-500" title="Ta bort länk"><i class="fa-solid fa-trash text-xs"></i></button>
                 </div>
               </div>
               <p class="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 mb-4">${link.description || 'Ingen beskrivning angiven.'}</p>
             </div>
-            <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 rounded-2xl bg-slate-100 dark:bg-slate-700/70 hover:bg-brand-600 hover:text-white text-xs font-extrabold flex items-center justify-between transition">
+            <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 rounded-2xl bg-slate-100 dark:bg-slate-700/70 hover:bg-brand-600 hover:text-white text-xs font-extrabold flex items-center justify-between transition" draggable="false">
               <span class="truncate">${domain}</span>
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
         `;
       }).join('');
+
+      // Stöd för touch-enheter (surfplatta/mobil) på grepp-ikonen
+      grid.querySelectorAll('.link-card').forEach(card => {
+        const handle = card.querySelector('.link-drag-handle');
+        const linkId = card.getAttribute('data-link-id');
+        if (!handle || !linkId) return;
+
+        handle.addEventListener('touchstart', (e) => {
+          touchDraggedLinkId = linkId;
+          card.classList.add('is-dragging');
+        }, { passive: true });
+
+        handle.addEventListener('touchmove', (e) => {
+          if (!touchDraggedLinkId) return;
+          const touch = e.touches[0];
+          const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+          const targetCard = elem?.closest('.link-card');
+          const targetId = targetCard?.getAttribute('data-link-id');
+
+          if (targetId && String(targetId) !== String(touchDraggedLinkId)) {
+            if (lastTouchTargetId !== targetId) {
+              document.querySelectorAll('#links-grid .link-card.drag-over').forEach(el => el.classList.remove('drag-over'));
+              targetCard.classList.add('drag-over');
+              lastTouchTargetId = targetId;
+            }
+          } else {
+            document.querySelectorAll('#links-grid .link-card.drag-over').forEach(el => el.classList.remove('drag-over'));
+            lastTouchTargetId = null;
+          }
+        }, { passive: true });
+
+        handle.addEventListener('touchend', async () => {
+          if (!touchDraggedLinkId) return;
+          const sourceId = touchDraggedLinkId;
+          const targetId = lastTouchTargetId;
+          touchDraggedLinkId = null;
+          lastTouchTargetId = null;
+
+          document.querySelectorAll('#links-grid .link-card').forEach(el => {
+            el.classList.remove('is-dragging', 'drag-over');
+          });
+
+          if (sourceId && targetId && String(sourceId) !== String(targetId)) {
+            const fromIdx = state.links.findIndex(x => String(x.id) === String(sourceId));
+            const toIdx = state.links.findIndex(x => String(x.id) === String(targetId));
+            if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+              const [moved] = state.links.splice(fromIdx, 1);
+              state.links.splice(toIdx, 0, moved);
+              await saveLinksOrder();
+              renderLinks();
+              showToast('Länkarnas ordning har sparats!');
+            }
+          }
+        });
+      });
     }
 
     function openLinkModal(id = null) {
@@ -7243,7 +7428,7 @@
         state.links.unshift(obj);
       }
 
-      await saveState();
+      await saveLinksOrder();
       closeLinkModal();
       renderLinks();
       showToast('Länken har sparats och synkats!');
@@ -7253,7 +7438,7 @@
       openConfirmModal('Ta bort länk', 'Är du säker på att du vill ta bort denna länk?', async () => {
         state.links = state.links.filter(x => String(x.id) !== String(id));
         await deleteLinkFromSupabase(id);
-        await saveState();
+        await saveLinksOrder();
         renderLinks();
         showToast('Länken har tagits bort.');
       });
