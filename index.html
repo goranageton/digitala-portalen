@@ -5436,40 +5436,48 @@
       const value = decodeURIComponent(encodedValue);
       ensureInventoryStruct();
 
-      // Om man klickar på en Benämning i modalen, matcha mot dess Artikelnummer så att ALLA poster med det artikelnumret filtreras fram
-      if (field === 'benamning') {
-        const allItems = state.inventory.systemItems;
-        const matchedItem = allItems.find(item => getSlicerItemField(item, 'benamning') === value);
-        const art = matchedItem ? getSlicerItemField(matchedItem, 'artikel') : null;
-        if (art && art !== '-') {
-          return toggleSlicerFilterEncoded('artikel', encodeURIComponent(art));
+      // Om man klickar på ARTIKEL eller BENÄMNING: matcha alltid på artikelnumret
+      if (field === 'benamning' || field === 'artikel') {
+        let art = value;
+        if (field === 'benamning') {
+          const allItems = state.inventory.systemItems;
+          const matchedItem = allItems.find(item => getSlicerItemField(item, 'benamning') === value || item.benamning === value);
+          art = matchedItem ? getSlicerItemField(matchedItem, 'artikel') : value;
         }
+
+        if (slicerFilters.artikel === art) {
+          slicerFilters.artikel = null;
+          slicerFilters.benamning = null;
+          const artSelect = document.getElementById('inv-filter-article');
+          if (artSelect) artSelect.value = 'ALL';
+        } else {
+          slicerFilters.artikel = art;
+          slicerFilters.benamning = null;
+          slicerFilters.serienummer = null;
+          slicerFilters.individ = null;
+
+          const artSelect = document.getElementById('inv-filter-article');
+          if (artSelect) {
+            if (![...artSelect.options].some(o => o.value === art)) {
+              artSelect.add(new Option(art, art));
+            }
+            artSelect.value = art;
+          }
+        }
+        renderInventory();
+        return;
       }
 
       if (slicerFilters[field] === value) {
         slicerFilters[field] = null;
-        if (field === 'artikel') {
-          const artSelect = document.getElementById('inv-filter-article');
-          if (artSelect) artSelect.value = 'ALL';
-        }
       } else {
         slicerFilters[field] = value;
-        if (field === 'artikel') {
-          const artSelect = document.getElementById('inv-filter-article');
-          if (artSelect) {
-            if (![...artSelect.options].some(o => o.value === value)) {
-              artSelect.add(new Option(value, value));
-            }
-            artSelect.value = value;
-          }
-        }
 
         // Säkerställ att tidigare filter i andra rutor som inte matchar det nya valet rensas automatiskt
-        // så att t.ex. ett klick på ett Artikelnummer alltid direkt visar dess Benämning, Serienummer och Individer
         const allItems = state.inventory.systemItems;
         const itemsForNewField = allItems.filter(item => getSlicerItemField(item, field) === value);
 
-        ['benamning', 'artikel', 'serienummer', 'individ'].forEach(otherField => {
+        ['artikel', 'serienummer', 'individ'].forEach(otherField => {
           if (otherField !== field && slicerFilters[otherField] !== null) {
             const stillMatches = itemsForNewField.some(
               item => getSlicerItemField(item, otherField) === slicerFilters[otherField]
@@ -5479,13 +5487,6 @@
             }
           }
         });
-
-        // Om man klickar på en huvudgrupp (Artikel eller Benämning), nollställ eventuellt låst enskilt Serienummer/Individ
-        // så att alla serienummer och individer för artikeln/benämningen visas direkt
-        if (field === 'artikel' || field === 'benamning') {
-          slicerFilters.serienummer = null;
-          slicerFilters.individ = null;
-        }
       }
       renderInventory();
     }
@@ -5493,7 +5494,7 @@
     function getSlicerItemField(item, field) {
       if (!item) return '-';
       if (field === 'benamning') return cleanCellText(resolveItemBenamning(item)) || '-';
-      if (field === 'artikel') return cleanCellText(item.artikel) || '-';
+      if (field === 'artikel') return cleanCellText(item.artikel || resolveArtnrForRubrik(item.benamning, item)) || '-';
       if (field === 'serienummer') return cleanCellText(item.serienummer) || '-';
       if (field === 'individ') return cleanCellText(item.individ) || '-';
       return '-';
@@ -5521,7 +5522,7 @@
       });
 
       const hasActiveFilter = Boolean(
-        slicerFilters.benamning || slicerFilters.artikel || slicerFilters.serienummer || slicerFilters.individ
+        slicerFilters.artikel || slicerFilters.serienummer || slicerFilters.individ
       );
 
       document.getElementById('slicer-clear-btn')?.classList.toggle('hidden', !hasActiveFilter);
@@ -5530,7 +5531,6 @@
       // Hjälpfunktion: hämta rader som matchar alla aktiva filter UTOM ett specifikt fält (eller alla om ignoreField = null)
       const getItemsMatchingExcept = (ignoreField = null) => {
         return allItems.filter(item => {
-          if (ignoreField !== 'benamning' && slicerFilters.benamning && getSlicerItemField(item, 'benamning') !== slicerFilters.benamning) return false;
           if (ignoreField !== 'artikel' && slicerFilters.artikel && getSlicerItemField(item, 'artikel') !== slicerFilters.artikel) return false;
           if (ignoreField !== 'serienummer' && slicerFilters.serienummer && getSlicerItemField(item, 'serienummer') !== slicerFilters.serienummer) return false;
           if (ignoreField !== 'individ' && slicerFilters.individ && getSlicerItemField(item, 'individ') !== slicerFilters.individ) return false;
@@ -5544,86 +5544,89 @@
       const totalEl = document.getElementById('slicer-total-count');
       if (totalEl) totalEl.textContent = matchingItems.length;
 
-      // Räkna exakt vilka värden som hör till det aktiva urvalet för respektive ruta
-      // Om ett filter är valt i t.ex. Artikel, visar Benämning, Serienummer och Individ ENDAST träffarna för den artikeln!
-      const benCounts = {};
-      const artCounts = {};
-      matchingItems.forEach(item => {
+      // 1. Gruppera alltid per unikt artikelnummer så att Benämning och Artikel matchar exakt 1-till-1
+      const globalArticleGroups = {};
+      allItems.forEach(item => {
+        const art = getSlicerItemField(item, 'artikel') || 'Okänd';
         const ben = getSlicerItemField(item, 'benamning');
-        const art = getSlicerItemField(item, 'artikel');
-        benCounts[ben] = (benCounts[ben] || 0) + 1;
-        artCounts[art] = (artCounts[art] || 0) + 1;
+
+        if (!globalArticleGroups[art]) {
+          globalArticleGroups[art] = {
+            artnr: art,
+            count: 0,
+            namesCount: {},
+            firstName: (ben && ben !== '-') ? ben : art
+          };
+        }
+        globalArticleGroups[art].count += 1;
+        if (ben && ben !== '-') {
+          globalArticleGroups[art].namesCount[ben] = (globalArticleGroups[art].namesCount[ben] || 0) + 1;
+        }
       });
 
-      // För att man enkelt ska kunna byta mellan olika Artiklar eller Benämningar utan att nollställa först:
-      // Rutan som du har klickat i visar det valda alternativet överst + övriga valbara alternativ under,
-      // medan de andra rutorna strikt svarar med exakt de värden som tillhör ditt val!
-      const benSourceItems = slicerFilters.benamning && !slicerFilters.artikel && !slicerFilters.serienummer && !slicerFilters.individ
-        ? allItems
-        : matchingItems;
-      const artSourceItems = slicerFilters.artikel && !slicerFilters.benamning && !slicerFilters.serienummer && !slicerFilters.individ
-        ? allItems
-        : matchingItems;
-
-      const benDisplayCounts = {};
-      benSourceItems.forEach(item => {
-        const ben = getSlicerItemField(item, 'benamning');
-        benDisplayCounts[ben] = (benDisplayCounts[ben] || 0) + 1;
+      // 2. Välj den benämningstext som är vanligast förekommande för respektive artikelnummer
+      const articleList = Object.values(globalArticleGroups).map(g => {
+        let bestName = g.firstName;
+        let maxOcc = 0;
+        for (const [name, occ] of Object.entries(g.namesCount)) {
+          if (occ > maxOcc) {
+            maxOcc = occ;
+            bestName = name;
+          }
+        }
+        return {
+          artnr: g.artnr,
+          benamning: bestName,
+          totalCount: g.count
+        };
       });
 
-      const artDisplayCounts = {};
-      artSourceItems.forEach(item => {
-        const art = getSlicerItemField(item, 'artikel');
-        artDisplayCounts[art] = (artDisplayCounts[art] || 0) + 1;
-      });
-
-      const benEntries = Object.entries(benDisplayCounts).sort((a, b) => {
-        if (slicerFilters.benamning === a[0]) return -1;
-        if (slicerFilters.benamning === b[0]) return 1;
-        return b[1] - a[1];
-      });
-
-      const artEntries = Object.entries(artDisplayCounts).sort((a, b) => {
-        if (slicerFilters.artikel === a[0]) return -1;
-        if (slicerFilters.artikel === b[0]) return 1;
-        return a[0].localeCompare(b[0], 'sv', { numeric: true });
-      });
-
-      const uniqueBenInSelection = Object.keys(benCounts).length;
-      const uniqueArtInSelection = Object.keys(artCounts).length;
-
-      document.getElementById('slicer-count-benamning').textContent = `${uniqueBenInSelection} ${uniqueBenInSelection === 1 ? 'benämning' : 'unika'}`;
-      document.getElementById('slicer-count-artikel').textContent = `${uniqueArtInSelection} ${uniqueArtInSelection === 1 ? 'artikel' : 'artiklar'}`;
+      const uniqueArtCount = articleList.length;
+      document.getElementById('slicer-count-benamning').textContent = `${uniqueArtCount} ${uniqueArtCount === 1 ? 'artikel' : 'artiklar'}`;
+      document.getElementById('slicer-count-artikel').textContent = `${uniqueArtCount} ${uniqueArtCount === 1 ? 'artikel' : 'artiklar'}`;
       document.getElementById('slicer-count-serienummer').textContent = `${matchingItems.length} st`;
       document.getElementById('slicer-count-individ').textContent = `${matchingItems.length} st`;
 
-      // 1. Rendera BENÄMNING
+      // 1. Sortering av ARTIKEL: fallande efter antal (störst antal överst, t.ex. 83322 med 100 st först)
+      const sortedByArtCount = [...articleList].sort((a, b) => {
+        if (b.totalCount !== a.totalCount) return b.totalCount - a.totalCount;
+        return a.artnr.localeCompare(b.artnr, 'sv', { numeric: true });
+      });
+
+      // 2. Sortering av BENÄMNING: fallande efter totalt antal (störst antal överst)
+      const sortedByBenCount = [...articleList].sort((a, b) => {
+        if (b.totalCount !== a.totalCount) return b.totalCount - a.totalCount;
+        return a.benamning.localeCompare(b.benamning, 'sv');
+      });
+
+      // 1. Rendera BENÄMNING (grupperad på artikelnummer, länkad direkt till artikelnumret)
       const benEl = document.getElementById('slicer-list-benamning');
-      benEl.innerHTML = benEntries.length ? benEntries.map(([name, cnt]) => {
-        const active = slicerFilters.benamning === name;
-        const dimmed = slicerFilters.benamning && !active;
-        const enc = encodeURIComponent(name);
+      benEl.innerHTML = sortedByBenCount.length ? sortedByBenCount.map(item => {
+        const active = slicerFilters.artikel === item.artnr;
+        const dimmed = slicerFilters.artikel && !active;
+        const enc = encodeURIComponent(item.artnr);
+        const safeName = item.benamning.replace(/"/g, '&quot;');
         return `
-          <button type="button" onclick="toggleSlicerFilterEncoded('benamning', '${enc}')"
+          <button type="button" onclick="toggleSlicerFilterEncoded('artikel', '${enc}')"
             class="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition border ${
               active
                 ? 'bg-sky-600 text-white border-sky-400 shadow-sm'
                 : dimmed
                 ? 'bg-slate-200/40 dark:bg-slate-800/40 text-slate-400 border-transparent opacity-60 hover:opacity-100'
                 : 'bg-sky-500/10 hover:bg-sky-500/20 text-slate-700 dark:text-sky-100 border-sky-500/20'
-            }">
-            <span class="truncate">${name}</span>
-            <span class="px-1.5 py-0.2 rounded-md text-[10px] font-extrabold shrink-0 ${active ? 'bg-white/20 text-white' : 'bg-sky-500/20 text-sky-600 dark:text-sky-300'}">${cnt}</span>
+            }" title="${safeName}">
+            <span class="truncate">${item.benamning}</span>
+            <span class="px-1.5 py-0.2 rounded-md text-[10px] font-extrabold shrink-0 ${active ? 'bg-white/20 text-white' : 'bg-sky-500/20 text-sky-600 dark:text-sky-300'}">${item.totalCount}</span>
           </button>
         `;
       }).join('') : `<div class="text-xs text-slate-400 py-4 text-center">Ingen data</div>`;
 
-      // 2. Rendera ARTIKEL
+      // 2. Rendera ARTIKEL (fallande sorterad efter antal)
       const artEl = document.getElementById('slicer-list-artikel');
-      artEl.innerHTML = artEntries.length ? artEntries.map(([art, cnt]) => {
-        const active = slicerFilters.artikel === art;
+      artEl.innerHTML = sortedByArtCount.length ? sortedByArtCount.map(item => {
+        const active = slicerFilters.artikel === item.artnr;
         const dimmed = slicerFilters.artikel && !active;
-        const enc = encodeURIComponent(art);
+        const enc = encodeURIComponent(item.artnr);
         return `
           <button type="button" onclick="toggleSlicerFilterEncoded('artikel', '${enc}')"
             class="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center justify-between gap-2 transition border ${
@@ -5633,8 +5636,8 @@
                 ? 'bg-slate-200/40 dark:bg-slate-800/40 text-slate-400 border-transparent opacity-60 hover:opacity-100'
                 : 'bg-sky-500/10 hover:bg-sky-500/20 text-slate-700 dark:text-sky-100 border-sky-500/20'
             }">
-            <span class="truncate">${art}</span>
-            <span class="px-1.5 py-0.2 rounded-md text-[10px] font-sans font-extrabold shrink-0 ${active ? 'bg-white/20 text-white' : 'bg-sky-500/20 text-sky-600 dark:text-sky-300'}">${cnt}</span>
+            <span class="truncate">${item.artnr}</span>
+            <span class="px-1.5 py-0.2 rounded-md text-[10px] font-sans font-extrabold shrink-0 ${active ? 'bg-white/20 text-white' : 'bg-sky-500/20 text-sky-600 dark:text-sky-300'}">${item.totalCount}</span>
           </button>
         `;
       }).join('') : `<div class="text-xs text-slate-400 py-4 text-center">Ingen data</div>`;
