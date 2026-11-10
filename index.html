@@ -116,24 +116,24 @@
       background-color: rgba(20, 184, 166, 0.08) !important;
       transform: scale(1.005);
     }
-    /* Drag & Drop för länkkort */
+    /* Drag & Drop & styling för länkkort */
     .link-card {
+      border-radius: 12px;
       transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s, border-color 0.2s, background-color 0.2s, opacity 0.2s;
     }
     .link-card.is-dragging {
       opacity: 0.35 !important;
-      transform: scale(0.97) !important;
+      transform: scale(0.98) !important;
       border-style: dashed !important;
-      border-width: 2px !important;
+      border-width: 1px !important;
       border-color: #6366f1 !important;
-      background-color: rgba(99, 102, 241, 0.06) !important;
+      background-color: rgba(99, 102, 241, 0.08) !important;
     }
     .link-card.drag-over {
       border-color: #6366f1 !important;
-      border-width: 2px !important;
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.45), 0 20px 25px -5px rgba(0, 0, 0, 0.25) !important;
-      background-color: rgba(99, 102, 241, 0.1) !important;
-      transform: translateY(-4px) scale(1.02) !important;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5), 0 10px 20px -5px rgba(0, 0, 0, 0.3) !important;
+      background-color: rgba(99, 102, 241, 0.12) !important;
+      transform: translateY(-2px) scale(1.01) !important;
     }
   </style>
 </head>
@@ -263,7 +263,7 @@
       </div>
 
       <!-- Kort-grid för länkar -->
-      <div id="links-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      <div id="links-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
     </section>
 
     <!-- ==================== VY 2: LATHUNDAR & GUIDER ==================== -->
@@ -7201,7 +7201,7 @@
     let lastTouchTargetId = null;
 
     function handleLinkDragStart(e, id) {
-      if (e.target.closest('a, button:not(.link-drag-handle)')) {
+      if (e.target.closest('button:not(.link-drag-handle)')) {
         e.preventDefault();
         return;
       }
@@ -7290,9 +7290,13 @@
         let domain = '';
         try { domain = new URL(link.url).hostname.replace('www.', ''); } catch (e) { domain = link.url; }
         const favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+        const cleanTitle = (link.title || '').trim();
+        const cleanDesc = (link.description || '').trim();
+        const isDescDistinct = cleanDesc && cleanDesc.toLowerCase() !== cleanTitle.toLowerCase();
+        const subtext = isDescDistinct ? cleanDesc : domain;
 
         return `
-          <div class="link-card group bg-white dark:bg-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5"
+          <div class="link-card group relative bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/90 border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/20 rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between gap-3 overflow-hidden cursor-pointer"
                data-link-id="${link.id}"
                draggable="true"
                ondragstart="handleLinkDragStart(event, '${link.id}')"
@@ -7300,28 +7304,36 @@
                ondragleave="handleLinkDragLeave(event)"
                ondrop="handleLinkDrop(event, '${link.id}')"
                ondragend="handleLinkDragEnd(event)">
-            <div>
-              <div class="flex items-start justify-between gap-3 mb-3">
-                <div class="flex items-center gap-3 min-w-0">
-                  <img src="${favicon}" alt="" class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-700 p-1.5 object-contain shrink-0" onerror="this.src='https://placehold.co/40x40/312e81/ffffff?text=L'" draggable="false" />
-                  <div class="min-w-0">
-                    <h3 class="font-extrabold text-base truncate">${link.title}</h3>
-                  </div>
-                </div>
-                <div class="flex items-center gap-1 shrink-0">
-                  <button type="button" class="link-drag-handle w-8 h-8 rounded-xl flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Dra för att ändra ordning">
-                    <i class="fa-solid fa-grip-vertical text-xs"></i>
-                  </button>
-                  <button type="button" onclick="openLinkModal('${link.id}')" class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-brand-500" title="Redigera länk"><i class="fa-solid fa-pen text-xs"></i></button>
-                  <button type="button" onclick="deleteLink('${link.id}')" class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-rose-500" title="Ta bort länk"><i class="fa-solid fa-trash text-xs"></i></button>
-                </div>
+            <!-- Hela kortet klickbar länk som öppnar i ny flik -->
+            <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="absolute inset-0 z-0 rounded-xl" aria-label="${escapeHtml(link.title)}" draggable="false"></a>
+
+            <!-- Vänster: Logotyp/Ikon (36x36) + Titel & Subtext -->
+            <div class="flex items-center gap-3 min-w-0 flex-1 relative z-10 pointer-events-none">
+              <img src="${favicon}" alt="" class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-lg bg-slate-100 dark:bg-slate-700/60 p-1.5 object-contain shrink-0 border border-slate-200/50 dark:border-white/5" onerror="this.src='https://placehold.co/36x36/312e81/ffffff?text=L'" draggable="false" />
+              <div class="min-w-0 flex-1">
+                <div class="font-bold text-sm text-slate-800 dark:text-slate-100 truncate">${escapeHtml(link.title)}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">${escapeHtml(subtext)}</div>
               </div>
-              <p class="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 mb-4">${link.description || 'Ingen beskrivning angiven.'}</p>
             </div>
-            <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 rounded-2xl bg-slate-100 dark:bg-slate-700/70 hover:bg-brand-600 hover:text-white text-xs font-extrabold flex items-center justify-between transition" draggable="false">
-              <span class="truncate">${domain}</span>
-              <i class="fa-solid fa-arrow-up-right-from-square"></i>
-            </a>
+
+            <!-- Höger: Åtgärder & Länkpil -->
+            <div class="flex items-center gap-1 shrink-0 relative z-10">
+              <div class="flex items-center gap-0.5 opacity-15 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
+                <button type="button" class="link-drag-handle w-7 h-7 rounded-lg flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition" title="Dra för att ändra ordning">
+                  <i class="fa-solid fa-grip-vertical text-xs"></i>
+                </button>
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); openLinkModal('${link.id}')" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-white/10 transition" title="Redigera länk">
+                  <i class="fa-solid fa-pen text-xs"></i>
+                </button>
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); deleteLink('${link.id}')" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-white/10 transition" title="Ta bort länk">
+                  <i class="fa-solid fa-trash text-xs"></i>
+                </button>
+              </div>
+
+              <div class="w-6 h-6 flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-brand-500 dark:group-hover:text-brand-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 pointer-events-none shrink-0" title="Öppna länk">
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+              </div>
+            </div>
           </div>
         `;
       }).join('');
