@@ -2964,6 +2964,22 @@
       }
     }
 
+    // Skydd mot oändliga realtime-loopar och redundant nätverkstrafik
+    let realtimeDebounceTimer = null;
+    let lastLocalInventorySaveTime = 0;
+
+    function handleRealtimeChange(table) {
+      // Filtrera bort ekon från egna lokala sparanden av inventory_state inom de senaste 3,5 sekunderna
+      if (table === 'inventory_state' && (Date.now() - lastLocalInventorySaveTime < 3500)) {
+        return;
+      }
+      // Debounce för att slå ihop snabba successiva ändringar till ett enda anrop
+      if (realtimeDebounceTimer) clearTimeout(realtimeDebounceTimer);
+      realtimeDebounceTimer = setTimeout(() => {
+        syncFromSupabase(false, false, table);
+      }, 500);
+    }
+
     function setupRealtimeSubscription() {
       if (!supabaseClient) return;
       if (realtimeChannel) {
@@ -2971,29 +2987,124 @@
       }
       realtimeChannel = supabaseClient
         .channel('portal-realtime-sync')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => syncFromSupabase(false))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'links' }, () => syncFromSupabase(false))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'guides' }, () => syncFromSupabase(false))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () => syncFromSupabase(false))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_state' }, () => syncFromSupabase(false))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => handleRealtimeChange('categories'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'links' }, () => handleRealtimeChange('links'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'guides' }, () => handleRealtimeChange('guides'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () => handleRealtimeChange('notes'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_state' }, () => handleRealtimeChange('inventory_state'))
         .subscribe();
     }
 
-    async function syncFromSupabase(showFeedback = false, triedFallback = false) {
+    // Optimerad synkronisering: Hämtar endast specifika kolumner och kan selektivt uppdatera enbart den ändrade tabellen
+    async function syncFromSupabase(showFeedback = false, triedFallback = false, targetTable = null) {
       if (!supabaseClient) return;
       setCloudStatus('syncing', 'Synkar...');
       try {
+        // Om bara en tabell ändrades i realtime, hämta endast den tabellen för att spara upp till 90% egress
+        if (targetTable === 'categories') {
+          const { data, error } = await supabaseClient.from('categories').select('name').order('created_at', { ascending: true });
+          if (!error && Array.isArray(data)) {
+            state.categories = data.map(c => c.name);
+            await saveState();
+            renderCategoryPills();
+          }
+          setCloudStatus('online', 'Synkad');
+          return;
+        }
+
+        if (targetTable === 'links') {
+          const { data, error } = await supabaseClient.from('links').select('id, title, url, category, description').order('created_at', { ascending: false }).limit(200);
+          if (!error && Array.isArray(data)) {
+            const mappedLinks = data.map(l => ({
+              id: l.id,
+              title: l.title,
+              url: l.url,
+              category: l.category || 'Övrigt',
+              description: l.description || ''
+            }));
+            state.links = applyLinksOrder(mappedLinks);
+            await saveState();
+            renderLinks();
+          }
+          setCloudStatus('online', 'Synkad');
+          return;
+        }
+
+        if (targetTable === 'guides') {
+          const { data, error } = await supabaseClient.from('guides').select('id, title, category, steps, images, pdfs, words, excels').order('created_at', { ascending: false }).limit(100);
+          if (!error && Array.isArray(data)) {
+            state.guides = data.map(g => ({
+              id: g.id,
+              title: g.title,
+              category: g.category || 'Övrigt',
+              steps: g.steps || g.description || '',
+              images: Array.isArray(g.images) ? g.images : [],
+              pdfs: Array.isArray(g.pdfs) ? g.pdfs : [],
+              words: Array.isArray(g.words) ? g.words : [],
+              excels: Array.isArray(g.excels) ? g.excels : []
+            }));
+            await saveState();
+            renderGuides();
+          }
+          setCloudStatus('online', 'Synkad');
+          return;
+        }
+
+        if (targetTable === 'notes') {
+          const { data, error } = await supabaseClient.from('notes').select('id, title, text, color, alarm_time, repeat, alarm_triggered').order('created_at', { ascending: false }).limit(100);
+          if (!error && Array.isArray(data)) {
+            state.notes = data.map(n => ({
+              id: n.id,
+              title: n.title,
+              text: n.text || '',
+              color: n.color || 'indigo',
+              alarmTime: n.alarm_time || '',
+              repeat: n.repeat || 'none',
+              alarmTriggered: Boolean(n.alarm_triggered)
+            }));
+            await saveState();
+            renderNotes();
+          }
+          setCloudStatus('online', 'Synkad');
+          return;
+        }
+
+        if (targetTable === 'inventory_state') {
+          const { data, error } = await supabaseClient.from('inventory_state').select('id, payload').eq('id', 'main').maybeSingle();
+          if (!error && data && data.payload) {
+            const p = data.payload;
+            state.inventory = {
+              systemItems: Array.isArray(p.systemItems) ? p.systemItems : [],
+              scannedLogs: Array.isArray(p.scannedLogs) ? p.scannedLogs : [],
+              copiedIndivids: Array.isArray(p.copiedIndivids) ? p.copiedIndivids : [],
+              copiedSpareArtnrs: Array.isArray(p.copiedSpareArtnrs) ? p.copiedSpareArtnrs : [],
+              rekondActivities: Array.isArray(p.rekondActivities) ? p.rekondActivities : [],
+              rekondCount: Array.isArray(p.rekondCount) ? p.rekondCount : [],
+              licensslut: (p.licensslut && typeof p.licensslut === 'object') ? p.licensslut : defaultState.inventory.licensslut,
+              spareParts: Array.isArray(p.spareParts) ? p.spareParts : defaultState.inventory.spareParts,
+              accessoriesCatalog: Array.isArray(p.accessoriesCatalog) && p.accessoriesCatalog.length ? p.accessoriesCatalog : DEFAULT_ACCESSORIES_CATALOG,
+              batteryMultiplier: Number(p.batteryMultiplier) || 4
+            };
+            await saveState();
+            renderInventory();
+            renderRekondCountPivot();
+            renderLicensslut();
+          }
+          setCloudStatus('online', 'Synkad');
+          return;
+        }
+
+        // Fullständig synk (endast vid init eller manuellt klick på Synka) - Bantade kolumner och .limit()
         const [catRes, linkRes, guideRes, noteRes, invRes] = await Promise.all([
-          supabaseClient.from('categories').select('*').order('created_at', { ascending: true }),
-          supabaseClient.from('links').select('*').order('created_at', { ascending: false }),
-          supabaseClient.from('guides').select('*').order('created_at', { ascending: false }),
-          supabaseClient.from('notes').select('*').order('created_at', { ascending: false }),
-          supabaseClient.from('inventory_state').select('*').eq('id', 'main').maybeSingle()
+          supabaseClient.from('categories').select('name').order('created_at', { ascending: true }),
+          supabaseClient.from('links').select('id, title, url, category, description').order('created_at', { ascending: false }).limit(200),
+          supabaseClient.from('guides').select('id, title, category, steps, images, pdfs, words, excels').order('created_at', { ascending: false }).limit(100),
+          supabaseClient.from('notes').select('id, title, text, color, alarm_time, repeat, alarm_triggered').order('created_at', { ascending: false }).limit(100),
+          supabaseClient.from('inventory_state').select('id, payload').eq('id', 'main').maybeSingle()
         ]);
 
         const firstError = catRes.error || linkRes.error || guideRes.error || noteRes.error;
         if (firstError) {
-          // Om anon-nyckeln nekas, prova automatiskt med din sb_publishable-nyckel
           if (!triedFallback && FALLBACK_PUBLISHABLE_KEY) {
             initSupabaseClient(FALLBACK_PUBLISHABLE_KEY);
             return await syncFromSupabase(showFeedback, true);
@@ -3024,7 +3135,8 @@
             steps: g.steps || g.description || '',
             images: Array.isArray(g.images) ? g.images : [],
             pdfs: Array.isArray(g.pdfs) ? g.pdfs : [],
-            words: Array.isArray(g.words) ? g.words : []
+            words: Array.isArray(g.words) ? g.words : [],
+            excels: Array.isArray(g.excels) ? g.excels : []
           }));
         }
         if (Array.isArray(noteRes.data)) {
@@ -3055,7 +3167,6 @@
         }
 
         await saveState();
-        await preloadGuideImageUrls();
         renderAll();
         setCloudStatus('online', 'Synkad');
         if (showFeedback) showToast('Synkad med Supabase i realtid!');
@@ -3082,16 +3193,58 @@
     }
 
     // ==================== SUPABASE CRUD & STORAGE HJÄLPARE ====================
+    // Automatisk klientside-komprimering till WebP för drastiskt minskad lagring och egress
+    async function compressImageToWebp(dataUrl, maxWidth = 1600, quality = 0.8) {
+      if (!dataUrl || !dataUrl.startsWith('data:image/')) return dataUrl;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxWidth || height > maxWidth) {
+            if (width > height) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxWidth) / height);
+              height = maxWidth;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const webpUrl = canvas.toDataURL('image/webp', quality);
+          resolve(webpUrl && webpUrl.startsWith('data:image/webp') ? webpUrl : dataUrl);
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    }
+
     async function uploadDataUrlToStorage(dataUrl, fileName, folder = 'attachments') {
       if (!supabaseClient || !dataUrl || !dataUrl.startsWith('data:')) return dataUrl;
       try {
-        const res = await fetch(dataUrl);
+        let finalDataUrl = dataUrl;
+        let contentType = 'application/octet-stream';
+        let safeName = (fileName || 'fil').replace(/[^a-zA-Z0-9._-]/g, '_');
+
+        // Komprimera bilder automatiskt till WebP innan uppladdning
+        if (dataUrl.startsWith('data:image/')) {
+          finalDataUrl = await compressImageToWebp(dataUrl, 1600, 0.8);
+          contentType = 'image/webp';
+          safeName = safeName.replace(/\.[^.]+$/, '') + '.webp';
+        }
+
+        const res = await fetch(finalDataUrl);
         const blob = await res.blob();
-        const safeName = (fileName || 'fil').replace(/[^a-zA-Z0-9._-]/g, '_');
         const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 7)}_${safeName}`;
+        
+        // Sätt 1 års cacheControl ('31536000') så webbläsaren och CDN cachar lokalt och minimerar egress
         const { error } = await supabaseClient.storage.from(STORAGE_BUCKET).upload(path, blob, {
           upsert: true,
-          contentType: blob.type || 'application/octet-stream'
+          contentType: blob.type || contentType,
+          cacheControl: '31536000'
         });
         if (error) return dataUrl;
         const { data } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
@@ -5305,17 +5458,32 @@
       runLicensslutComparison();
     }
 
-    async function syncInventoryToSupabase() {
+    let syncInventoryTimer = null;
+
+    async function syncInventoryToSupabase(immediate = false) {
       ensureInventoryStruct();
       await saveState();
       if (!supabaseClient) return;
-      try {
-        await supabaseClient.from('inventory_state').upsert({
-          id: 'main',
-          payload: state.inventory,
-          updated_at: new Date().toISOString()
-        });
-      } catch (e) {}
+      lastLocalInventorySaveTime = Date.now();
+
+      const doUpsert = async () => {
+        try {
+          await supabaseClient.from('inventory_state').upsert({
+            id: 'main',
+            payload: state.inventory,
+            updated_at: new Date().toISOString()
+          });
+        } catch (e) {}
+      };
+
+      if (immediate) {
+        if (syncInventoryTimer) clearTimeout(syncInventoryTimer);
+        syncInventoryTimer = null;
+        await doUpsert();
+      } else {
+        if (syncInventoryTimer) clearTimeout(syncInventoryTimer);
+        syncInventoryTimer = setTimeout(doUpsert, 500);
+      }
     }
 
     function normalizeCode(val) {
