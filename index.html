@@ -3794,38 +3794,86 @@
     }
 
     function resolveArtnrForRubrik(rubrik, item = null) {
-      if (item && (item.artnr || item.artikel)) {
-        const direct = cleanCellText(item.artnr || item.artikel);
-        if (direct && direct !== '-') return direct;
-      }
       const cleanR = cleanCellText(rubrik || '');
-      if (!cleanR) return '-';
-
-      // 1. Kolla om rubriken redan börjar med artikelnummer (t.ex. "82730 - A&D 656")
-      const leadingMatch = cleanR.match(/^(\d{5,6})\b/);
-      if (leadingMatch) return leadingMatch[1];
-
       const normR = cleanR.toLowerCase();
 
-      // 2. Sök i systemItems (användarens inlästa grunddata)
-      if (state.inventory && Array.isArray(state.inventory.systemItems)) {
-        const sysMatch = state.inventory.systemItems.find(s => {
-          const b = (s.benamning || '').toLowerCase();
-          return b === normR || (b.length > 5 && (b.includes(normR) || normR.includes(b)));
-        });
-        if (sysMatch && sysMatch.artikel) return cleanCellText(sysMatch.artikel);
+      // 1. Kolla om rubriken redan börjar med artikelnummer (t.ex. "82730 - A&D 656" eller "[82730]")
+      const leadingMatch = cleanR.match(/^\[?(\d{5,6})\]?\b/);
+      if (leadingMatch && ARTICLE_DEFAULT_NAMES[leadingMatch[1]]) return leadingMatch[1];
+
+      // 2. Deterministisk kanonisk igenkänning av huvudprodukter (prioriteras så artnr & benämning alltid stämmer)
+      if (normR.includes('90341') || (normR.includes('omron') && normR.includes('svart')) || (normR.includes('m7') && normR.includes('svart'))) {
+        return '90341';
+      }
+      if (normR.includes('81549') || normR.includes('omron') || normR.includes('m7 intelli') || normR.includes('m7 it-afib')) {
+        return '81549';
+      }
+      if (normR.includes('82730') || normR.includes('a&d') || normR.includes('a & d') || normR.includes('656')) {
+        // Kontrollera att det inte är ett specifikt tillbehör (t.ex. manschett eller nätadapter)
+        if (!normR.includes('nätadapter') && !normR.includes('manschett') && !normR.includes('batterilucka') && !normR.includes('bärväska')) {
+          return '82730';
+        }
+      }
+      if (normR.includes('81729') || normR.includes('pulsoximeter') || normR.includes('microlife') || normR.includes('oxy 500') || normR.includes('oxy500')) {
+        return '81729';
+      }
+      if (normR.includes('82469') || normR.includes('personvåg') || normR.includes('ms6110') || normR.includes('golvvåg')) {
+        if (!normR.includes('strömförsörjningskabel')) return '82469';
+      }
+      if (normR.includes('87613') || (normR.includes('evondos') && (normR.includes('anna') || normR.includes('e02')))) {
+        return '87613';
+      }
+      if (normR.includes('83322') || normR.includes('e300') || normR.includes('evondos')) {
+        return '83322';
+      }
+      if (normR.includes('dosell')) {
+        if (normR.includes('2.0') || normR.includes('version 2')) {
+          return (normR.includes('admin') || normR.includes('tjänst')) ? '84317' : '83845';
+        }
+        return (normR.includes('admin') || normR.includes('tjänst') || normR.includes('89514')) ? '89514' : '89515';
+      }
+      if (normR.includes('nattugla') || normR.includes('natt ugla')) {
+        if (normR.includes('avancerad') || normR.includes('sensor') || normR.includes('86991')) return '86991';
+        return '86983';
+      }
+      if (normR.includes('86988') || normR.includes('serviceskärm') || normR.includes('service skärm')) {
+        return '86988';
+      }
+      if (normR.includes('86390') || normR.includes('pico')) {
+        return '86390';
+      }
+      if (normR.includes('86391') || normR.includes('nano')) {
+        return '86391';
+      }
+      if (normR.includes('88046') || (normR.includes('active') && (normR.includes('gen 2') || normR.includes('gen2') || normR.includes('hemmafyr')))) {
+        return '88046';
+      }
+      if (normR.includes('86392') || normR.includes('active')) {
+        return '86392';
       }
 
-      // 3. Sök i accessoriesCatalog / DEFAULT_ACCESSORIES_CATALOG
-      const catalog = (state.inventory && state.inventory.accessoriesCatalog) || DEFAULT_ACCESSORIES_CATALOG || [];
-      for (const a of catalog) {
-        const n = (a.name || '').toLowerCase();
-        if (n === normR || (n.length > 5 && (n.includes(normR) || normR.includes(n)))) {
-          return cleanCellText(a.artnr);
+      // 3. Om ett direkt artikelnummer redan finns angivet på objektet och inte motsäger texten
+      if (item && (item.artnr || item.artikel)) {
+        const direct = cleanCellText(item.artnr || item.artikel);
+        if (direct && direct !== '-' && direct !== 'Okänd') return direct;
+      }
+
+      // 4. Sök i ARTICLE_DEFAULT_NAMES
+      for (const [art, name] of Object.entries(ARTICLE_DEFAULT_NAMES)) {
+        const n = name.toLowerCase();
+        if (n === normR || (normR.length > 8 && (n.includes(normR) || normR.includes(n)))) {
+          return art;
         }
       }
 
-      // Token overlap i tillbehörskatalogen för att hitta matchning trots små texts killnader
+      // 5. Sök i accessoriesCatalog / DEFAULT_ACCESSORIES_CATALOG
+      const catalog = (state.inventory && state.inventory.accessoriesCatalog) || DEFAULT_ACCESSORIES_CATALOG || [];
+      for (const a of catalog) {
+        const n = (a.name || '').toLowerCase();
+        if (n === normR) return cleanCellText(a.artnr);
+      }
+
+      // Token overlap för tillbehörskatalogen (kräver minst 2 unika ord)
       const rTokens = normR.split(/[^a-z0-9åäö]+/i).filter(t => t.length > 2);
       let bestCat = null;
       let maxCatMatches = 1;
@@ -3839,17 +3887,16 @@
       }
       if (bestCat && maxCatMatches >= 2) return cleanCellText(bestCat);
 
-      // 4. Sök i ARTICLE_DEFAULT_NAMES
-      if (typeof ARTICLE_DEFAULT_NAMES === 'object') {
-        for (const [art, name] of Object.entries(ARTICLE_DEFAULT_NAMES)) {
-          const n = (name || '').toLowerCase();
-          if (n === normR || (n.length > 5 && (n.includes(normR) || normR.includes(n)))) {
-            return art;
-          }
-        }
+      // 6. Sök i systemItems (strikt matchning)
+      if (state.inventory && Array.isArray(state.inventory.systemItems)) {
+        const sysMatch = state.inventory.systemItems.find(s => {
+          const b = (s.benamning || '').toLowerCase();
+          return b === normR;
+        });
+        if (sysMatch && sysMatch.artikel) return cleanCellText(sysMatch.artikel);
       }
 
-      // 5. Fristående 5- eller 6-siffrigt nummer i texten
+      // 7. Fristående 5- eller 6-siffrigt nummer i texten
       const embeddedMatch = cleanR.match(/\b(\d{5,6})\b/);
       if (embeddedMatch) return embeddedMatch[1];
 
@@ -3882,7 +3929,8 @@
         const d = item.date || 'Ej angivet datum';
         const r = item.rubrik || 'Okänd rubrik';
         const c = Number(item.count) || 1;
-        const art = item.artnr || resolveArtnrForRubrik(r, item);
+        const art = resolveArtnrForRubrik(r, item);
+        if (art && art !== '-') item.artnr = art;
 
         if (!grouped[d]) grouped[d] = { total: 0, items: {} };
         grouped[d].total += c;
@@ -5523,14 +5571,24 @@
     }
 
     const ARTICLE_DEFAULT_NAMES = {
+      '81549': 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm) och nätadapter',
+      '90341': 'Blodtrycksmätare Omron M7 (Svart)',
       '82730': 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L',
-      '81549': 'Blodtrycksmätare A&D 656',
-      '81729': 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm)',
-      '82469': 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42cm)',
-      '83322': 'Läkemedelsautomat / Pulsoximeter',
-      '86390': 'Läkemedelsautomat Dosell version 3.0',
-      '86391': 'Läkemedelsautomat Dosell version 3.0 med administrationstjänst',
-      '86392': 'Läkemedelsautomat Evondos Anna med administrationstjänst'
+      '81729': 'Fingertoppspulsoximeter Microlife OXY 500 BT inkl. transportväska',
+      '82469': 'Personvåg trådlös dubbelsidig medicinsk golvvåg, Bluetooth',
+      '83322': 'Läkemedelsautomat Evondos E300 med administrationstjänst',
+      '87613': 'Läkemedelsautomat Evondos Anna med administrationstjänst',
+      '83845': 'Läkemedelsautomat Dosell 2.0',
+      '84317': 'Läkemedelsautomat Dosell 2.0 med administrationstjänst',
+      '89514': 'Läkemedelsautomat Dosell version 3.0 med administrationstjänst',
+      '89515': 'Läkemedelsautomat Dosell version 3.0',
+      '86390': 'Mobilt trygghetslarm Pico Pro med halsband',
+      '86391': 'Mobilt trygghetslarm Nano 4G bärbar/förberedd för fästanordning',
+      '86392': 'Mobilt trygghetslarm Active med armband',
+      '88046': 'Mobilt trygghetslarm Active med armband Gen 2 med hemmafyr',
+      '86983': 'Digital tillsyn NattUgla Enkel (kamera) inkl fäste, extern antenn',
+      '86991': 'Digital tillsyn NattUgla Avancerad (kamera samt sensor) inkl fäste, extern antenn',
+      '86988': 'Serviceskärm'
     };
 
     function applyAutoSparesForArticle(artikelNr, deltaUnits) {
@@ -6126,12 +6184,12 @@
         ['Individ', 'Benämning', 'Serienummer', 'Artikel', 'Status', 'Lager', 'Liggplats', 'Lagerstatus'],
         ['1875194', 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', '522700878', '82730', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
         ['1875198', 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', '5220700982', '82730', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
-        ['1875481', 'Läkemedelsautomat Evondos E300 inkl tjänstepaket 3år', 'PP019904', '83322', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
-        ['2085055', 'Digital tillsyn NattUgla Enkel (kamera) inkl fäste, extern antenn', '00004029', '82730', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
-        ['2085056', 'Fingertoppspulsoximeter Microlife OXY 500 BT inkl. transportväska', '00004032', '83322', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
-        ['2085057', 'Läkemedelsautomat Dosell version 3.0 med administrationstjänst', '00004041', '86391', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
-        ['2085061', 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm)', '00004055', '81729', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
-        ['2085062', 'Läkemedelsautomat Evondos Anna med administrationstjänst', '00004067', '86392', 'Individen finns på lager', '81', '0', 'Tillgänglig']
+        ['1875481', 'Läkemedelsautomat Evondos E300 med administrationstjänst', 'PP019904', '83322', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
+        ['2085055', 'Digital tillsyn NattUgla Enkel (kamera) inkl fäste, extern antenn', '00004029', '86983', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
+        ['2085056', 'Fingertoppspulsoximeter Microlife OXY 500 BT inkl. transportväska', '00004032', '81729', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
+        ['2085057', 'Läkemedelsautomat Dosell version 3.0 med administrationstjänst', '00004041', '89514', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
+        ['2085061', 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm) och nätadapter', '00004055', '81549', 'Individen finns på lager', '81', '0', 'Tillgänglig'],
+        ['2085062', 'Läkemedelsautomat Evondos Anna med administrationstjänst', '00004067', '87613', 'Individen finns på lager', '81', '0', 'Tillgänglig']
       ];
       ensureInventoryStruct();
       state.inventory.systemItems = parseSheetRowsSmart(sampleRows);
@@ -6423,20 +6481,28 @@
       // 1. Gruppera alltid data på unikt artikelnummer (inte på textbenämning)
       const groups = {};
       sourceItems.forEach(item => {
-        const artnr = cleanCellText(item.artikel || item.artikelnr || item.artnr || '').trim() || 'Okänd';
-        const benamning = cleanCellText(resolveItemBenamning(item) || item.benamning || '').trim();
+        let artnr = cleanCellText(item.artikel || item.artikelnr || item.artnr || '').trim();
+        if (!artnr || artnr === 'Okänd' || artnr === '-') {
+          artnr = resolveArtnrForRubrik(item.benamning, item);
+        }
+        if (!artnr || artnr === '-') artnr = 'Okänd';
+
+        let benamning = cleanCellText(item.benamning || resolveItemBenamning(item) || '').trim();
+        if ((!benamning || benamning === 'Okänd' || benamning === '-') && artnr && ARTICLE_DEFAULT_NAMES[artnr]) {
+          benamning = ARTICLE_DEFAULT_NAMES[artnr];
+        }
 
         if (!groups[artnr]) {
           groups[artnr] = {
             artnr,
             count: 0,
             namesCount: {},
-            firstName: benamning || 'Okänd'
+            firstName: benamning || (ARTICLE_DEFAULT_NAMES[artnr] || 'Okänd')
           };
         }
 
         groups[artnr].count += 1;
-        if (benamning) {
+        if (benamning && benamning !== 'Okänd') {
           groups[artnr].namesCount[benamning] = (groups[artnr].namesCount[benamning] || 0) + 1;
         }
       });
