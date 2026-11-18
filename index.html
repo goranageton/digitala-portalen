@@ -1795,6 +1795,10 @@
             <span>Importera Excel</span>
             <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleAccessoriesExcelUpload(event)" />
           </label>
+          <button type="button" onclick="exportAccessoriesToExcel()" class="px-3 py-1.5 rounded-xl bg-[#1e293b] hover:bg-slate-700 border border-[#334155] text-white text-xs font-bold flex items-center gap-1.5 shadow transition" title="Exportera samtliga artiklar till Excel">
+            <i class="fa-solid fa-file-export text-emerald-400"></i>
+            <span>Exportera Excel</span>
+          </button>
           <button type="button" onclick="openPasteAccessoriesModal()" class="px-3 py-1.5 rounded-xl bg-[#1e293b] hover:bg-slate-700 border border-[#334155] text-white text-xs font-bold flex items-center gap-1.5 shadow transition">
             <i class="fa-solid fa-paste text-indigo-400"></i>
             <span>Klistra in Excel</span>
@@ -7224,6 +7228,53 @@
       };
       reader.readAsArrayBuffer(file);
       event.target.value = '';
+    }
+
+    function exportAccessoriesToExcel() {
+      ensureInventoryStruct();
+      const catalog = state.inventory.accessoriesCatalog || DEFAULT_ACCESSORIES_CATALOG || [];
+
+      if (!catalog.length) {
+        showToast('Inga artiklar finns i tillbehörskatalogen att exportera.');
+        return;
+      }
+
+      // Exportera samtliga artiklar oberoende av aktiv filtrering eller sökning
+      const rows = catalog.map(item => {
+        const qty = selectedAccessories[item.artnr]?.count ?? item.count ?? item.antal ?? 1;
+        return {
+          'Artikelnr': item.artnr || '',
+          'Benämning': item.name || item.benamning || '',
+          'Liggplats': item.liggplats || '',
+          'Kategori': item.kategori || '',
+          'Roll / Typ': item.typ || item.roll || 'Tillbehör',
+          'Antal': qty
+        };
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows);
+
+      // Sätt kolumnbredder för god läsbarhet i Excel
+      ws['!cols'] = [
+        { wch: 12 }, // Artikelnr
+        { wch: 45 }, // Benämning
+        { wch: 15 }, // Liggplats
+        { wch: 22 }, // Kategori
+        { wch: 16 }, // Roll / Typ
+        { wch: 8 }   // Antal
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Reservdelar & Tillbehör');
+
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const filename = `reservdelar_och_tillbehor_${yyyy}-${mm}-${dd}.xlsx`;
+
+      XLSX.writeFile(wb, filename);
+      showToast(`Exporterade alla ${rows.length} artiklar till "${filename}"!`);
     }
 
     function openPasteAccessoriesModal() {
