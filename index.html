@@ -66,6 +66,12 @@
   <!-- SheetJS (xlsx) för import och export av Excel-filer vid inventering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+  <!-- Lokala konverteringsbibliotek för fliken Konvertera (PDF.js, docx, jsPDF + AutoTable) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     body {
@@ -215,6 +221,10 @@
         <button type="button" onclick="switchTab('licensslut')" id="tab-licensslut" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 shrink-0">
           <i class="fa-solid fa-pills text-teal-400"></i>
           <span>Licensslut</span>
+        </button>
+        <button type="button" onclick="switchTab('convert')" id="tab-convert" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 shrink-0">
+          <i class="fa-solid fa-arrows-rotate text-indigo-400"></i>
+          <span>Konvertera</span>
         </button>
         <button type="button" onclick="switchTab('game')" id="tab-game" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 shrink-0">
           <i class="fa-solid fa-gamepad text-purple-400"></i>
@@ -1017,6 +1027,84 @@
           <span id="licensslutTableCountInfo">Visar 0 rader</span>
           <span>Endast artikelnummer 83322 och 87613 inkluderas från Lager 81</span>
         </div>
+      </div>
+    </section>
+
+    <!-- ==================== VY: KONVERTERA (100 % LOKALT I WEBBLÄSAREN) ==================== -->
+    <section id="view-convert" class="hidden space-y-4">
+      <div class="bg-white dark:bg-slate-800/95 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25 shrink-0">
+              <i class="fa-solid fa-arrows-rotate text-lg"></i>
+            </div>
+            <div>
+              <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Konvertera filer</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Omvandla PDF, Word (.docx) och Excel (.xlsx/.xls) direkt i webbläsaren utan uppladdning.</p>
+            </div>
+          </div>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>100 % lokalt i webbläsaren</span>
+          </span>
+        </div>
+
+        <!-- Dra och släpp-ruta -->
+        <label id="convert-dropzone" class="block cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-indigo-500 dark:hover:border-indigo-400 bg-slate-50/70 dark:bg-slate-900/60 p-8 text-center transition">
+          <input id="convert-file-input" type="file" accept=".pdf,.docx,.xlsx,.xls" class="hidden" />
+          <div class="w-12 h-12 mx-auto rounded-2xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center text-xl mb-3">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <div class="text-sm font-extrabold text-slate-800 dark:text-white">Dra och släpp din fil här, eller klicka för att välja</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Stödjer: PDF (.pdf), Word (.docx) och Excel (.xlsx / .xls)</div>
+        </label>
+
+        <!-- Statusmeddelande -->
+        <div id="convert-status" class="hidden px-4 py-2.5 rounded-xl border text-xs font-bold"></div>
+
+        <!-- Vald fil -->
+        <div id="convert-file-info" class="hidden flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 flex">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-file-lines"></i>
+            </div>
+            <div class="min-w-0">
+              <div id="convert-file-name" class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate"></div>
+              <div id="convert-file-meta" class="text-[11px] text-slate-500 dark:text-slate-400"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div id="convert-sheet-wrapper" class="hidden flex items-center gap-2">
+              <label for="convert-sheet-select" class="text-xs font-bold text-slate-500 dark:text-slate-400">Blad:</label>
+              <select id="convert-sheet-select" onchange="window.portalConverter.setExcelSheet(this.value)" class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-800 dark:text-slate-100"></select>
+            </div>
+            <button type="button" onclick="window.portalConverter.reset()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-rose-500 hover:text-white text-xs font-bold transition">
+              Rensa / Byt fil
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamiska målformat -->
+        <div id="convert-target-section" class="hidden space-y-3">
+          <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Välj målformat</div>
+          <div id="convert-target-buttons" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+      </div>
+
+      <!-- Förhandsvisning & Export -->
+      <div id="convert-preview-section" class="hidden bg-white dark:bg-slate-800/95 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Förhandsvisning</h3>
+            <p id="convert-preview-title" class="text-xs text-slate-500 dark:text-slate-400"></p>
+          </div>
+          <button id="convert-export-btn" type="button" onclick="window.portalConverter.exportFile()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition">
+            <i class="fa-solid fa-download"></i>
+            <span>Exportera / Spara fil</span>
+          </button>
+        </div>
+
+        <div id="convert-preview-body" class="overflow-x-auto overflow-y-auto custom-scrollbar rounded-2xl border border-slate-200 dark:border-slate-700 max-h-[460px]"></div>
       </div>
     </section>
 
@@ -2784,7 +2872,7 @@
         document.body.classList.remove('portal-game-active');
       }
 
-      ['links', 'guides', 'notes', 'inventory', 'rekondCount', 'licensslut', 'game'].forEach(t => {
+      ['links', 'guides', 'notes', 'inventory', 'rekondCount', 'licensslut', 'convert', 'game'].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const btn = document.getElementById(`tab-${t}`);
         if (!view || !btn) return;
@@ -2797,6 +2885,8 @@
             renderRekondCountPivot();
           } else if (t === 'licensslut') {
             renderLicensslut();
+          } else if (t === 'convert') {
+            window.portalConverter?.init();
           } else if (t === 'game') {
             window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
             document.documentElement.scrollTop = 0;
@@ -8792,6 +8882,9 @@
       setInterval(checkAlarms, 3000);
     });
   </script>
+
+  <!-- ==================== KONVERTERINGSSKRIPT ==================== -->
+  <script src="convert/converter.js"></script>
 
   <!-- ==================== SPEL SKRIPT (KEMI-LABBET VÄTSKE-PUZZLE) ==================== -->
   <script src="game/audio.js"></script>
