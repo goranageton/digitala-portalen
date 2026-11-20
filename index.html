@@ -479,18 +479,24 @@
 
       <!-- REKONDAKTIVITET (PIVOTTABELL: PLANERAT DATUM & ANTAL AV RUBRIK) -->
       <div id="rekond-activity-panel" class="hidden bg-white dark:bg-slate-800/95 p-5 rounded-3xl shadow-sm border-2 border-indigo-500/30 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-3.5">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25">
-              <i class="fa-solid fa-calendar-check text-lg"></i>
+        <div class="space-y-3 border-b border-slate-200 dark:border-slate-700 pb-3.5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25 shrink-0">
+                <i class="fa-solid fa-calendar-check text-lg"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-extrabold flex items-center gap-2">
+                  <span>Rekondplanering</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">Planerat datum & Rubrik</span>
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Klistra in eller importera Excel-export från systemet. Artnr och benämning behålls exakt som i Excel och grupperas alltid på Artnr (samma benämning kan ha olika artnr).</p>
+              </div>
             </div>
-            <div>
-              <h3 class="text-base font-extrabold flex items-center gap-2">
-                <span>Rekondplanering</span>
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">Planerat datum & Rubrik</span>
-              </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Klistra in eller importera Excel-export från systemet. Artnr och benämning behålls exakt som i Excel och grupperas alltid på Artnr (samma benämning kan ha olika artnr).</p>
-            </div>
+
+            <button type="button" onclick="toggleRekondActivityPanel()" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-rose-500 hover:text-white flex items-center justify-center transition shrink-0" title="Stäng Rekondplanering">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
@@ -511,9 +517,6 @@
             </button>
             <button type="button" onclick="clearRekondActivityData()" class="px-2.5 py-2 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white text-xs font-bold transition" title="Rensa pivottabell">
               <i class="fa-solid fa-trash-can"></i>
-            </button>
-            <button type="button" onclick="toggleRekondActivityPanel()" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-rose-500 hover:text-white flex items-center justify-center transition" title="Stäng Rekondaktivitet">
-              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
         </div>
