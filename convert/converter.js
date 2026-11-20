@@ -13,6 +13,8 @@
     docxHtml: '',
     previewRows: [], // string[][]
     previewTitle: '',
+    totalColCount: 0,
+    selectedColIndices: [],
     isProcessing: false
   };
 
@@ -36,6 +38,18 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function decodeHtmlEntities(str) {
+    return String(str ?? '')
+      .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&nbsp;/g, ' ');
   }
 
   // Sanera tecken som jsPDF:s standardfont (WinAnsi) inte stöder
@@ -206,9 +220,44 @@
     if (!sheet) return [];
     const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
     const cleaned = aoa
-      .map(row => (Array.isArray(row) ? row.map(cell => String(cell ?? '').trim()) : []))
+      .map(row => (Array.isArray(row) ? row.map(cell => decodeHtmlEntities(String(cell ?? '')).trim()) : []))
       .filter(row => row.some(cell => cell !== ''));
     return compactEmptyColumns(cleaned);
+  }
+
+  function initColumnSelection(rows) {
+    const colCount = rows.length ? Math.max(...rows.map(r => r.length)) : 0;
+    convertState.totalColCount = colCount;
+    convertState.selectedColIndices = Array.from({ length: colCount }, (_, i) => i);
+  }
+
+  function toggleColumn(colIdx) {
+    const idx = Number(colIdx);
+    const pos = convertState.selectedColIndices.indexOf(idx);
+    if (pos !== -1) {
+      convertState.selectedColIndices.splice(pos, 1);
+    } else {
+      convertState.selectedColIndices.push(idx);
+      convertState.selectedColIndices.sort((a, b) => a - b);
+    }
+    renderConvertControls();
+    renderConvertPreview();
+  }
+
+  function selectAllColumns(selectAll) {
+    convertState.selectedColIndices = selectAll
+      ? Array.from({ length: convertState.totalColCount }, (_, i) => i)
+      : [];
+    renderConvertControls();
+    renderConvertPreview();
+  }
+
+  function filterRowsBySelectedColumns(rows) {
+    const cols = convertState.selectedColIndices;
+    if (!cols.length) return [];
+    return rows
+      .map(row => cols.map(cIdx => row[cIdx] || ''))
+      .filter(row => row.some(cell => cell.trim() !== ''));
   }
 
   // ==================== WORD (.DOCX) -> HTML & PREVIEW ====================
@@ -284,6 +333,7 @@
         convertState.pdfPages = await extractPdfStructuredPages(buffer);
         const allRows = compactEmptyColumns(convertState.pdfPages.flatMap(p => p.rows));
         convertState.previewRows = allRows;
+        initColumnSelection(allRows);
         convertState.previewTitle = `${convertState.pdfPages.length} sida/sidor • ${allRows.length} rader`;
         if (!allRows.length) {
           setStatus('Kunde inte hitta någon extraherbar text i PDF:en (den kan vara skannad som bild).', true);
@@ -296,6 +346,8 @@
         }
         const res = await window.mammoth.convertToHtml({ arrayBuffer: buffer });
         convertState.docxHtml = res.value || '';
+        convertState.totalColCount = 0;
+        convertState.selectedColIndices = [];
         const blocks = extractDocxBlocks(convertState.docxHtml);
         convertState.previewTitle = `${blocks.length} innehållsblock i Word-dokumentet`;
         setStatus('');
@@ -308,6 +360,7 @@
         convertState.sheetNames = wb.SheetNames || [];
         convertState.selectedSheet = convertState.sheetNames[0] || '';
         convertState.previewRows = getExcelSheetRows(convertState.selectedSheet);
+        initColumnSelection(convertState.previewRows);
         convertState.previewTitle = `Blad: ${convertState.selectedSheet} • ${convertState.previewRows.length} rader`;
         setStatus('');
       }
@@ -329,7 +382,9 @@
   function setConvertExcelSheet(sheetName) {
     convertState.selectedSheet = sheetName;
     convertState.previewRows = getExcelSheetRows(sheetName);
+    initColumnSelection(convertState.previewRows);
     convertState.previewTitle = `Blad: ${sheetName} • ${convertState.previewRows.length} rader`;
+    renderConvertControls();
     renderConvertPreview();
   }
 
@@ -346,6 +401,8 @@
     convertState.docxHtml = '';
     convertState.previewRows = [];
     convertState.previewTitle = '';
+    convertState.totalColCount = 0;
+    convertState.selectedColIndices = [];
     const input = document.getElementById('convert-file-input');
     if (input) input.value = '';
     setStatus('');
@@ -440,7 +497,7 @@
     if (exportBtn) {
       const hasData = convertState.fileType === 'docx'
         ? Boolean(convertState.docxHtml)
-        : convertState.previewRows.length > 0;
+        : (convertState.previewRows.length > 0 && convertState.selectedColIndices.length > 0);
       exportBtn.disabled = convertState.isProcessing || !hasData;
     }
   }
@@ -448,16 +505,19 @@
   function renderConvertPreview() {
     const section = document.getElementById('convert-preview-section');
     const titleEl = document.getElementById('convert-preview-title');
+    const colSelectorEl = document.getElementById('convert-column-selector');
     const bodyEl = document.getElementById('convert-preview-body');
     if (!section || !bodyEl) return;
 
     if (!convertState.file || convertState.isProcessing) {
       section.classList.add('hidden');
+      if (colSelectorEl) colSelectorEl.classList.add('hidden');
       bodyEl.innerHTML = '';
       return;
     }
 
     if (convertState.fileType === 'docx') {
+      if (colSelectorEl) colSelectorEl.classList.add('hidden');
       if (!convertState.docxHtml) {
         section.classList.add('hidden');
         return;
@@ -475,18 +535,65 @@
     const rows = convertState.previewRows || [];
     if (!rows.length) {
       section.classList.add('hidden');
+      if (colSelectorEl) colSelectorEl.classList.add('hidden');
       return;
     }
 
     section.classList.remove('hidden');
     const maxPreviewRows = 100;
-    const slice = rows.slice(0, maxPreviewRows);
-    const colCount = Math.max(...slice.map(r => r.length));
-    if (titleEl) {
-      const extra = rows.length > maxPreviewRows ? ` (visar första ${maxPreviewRows})` : '';
-      titleEl.textContent = `${convertState.previewTitle || ''} • ${colCount} kolumner${extra}`;
+    const totalCols = convertState.totalColCount;
+    const selectedCols = convertState.selectedColIndices;
+    const headerSource = rows[0] || [];
+
+    if (colSelectorEl) {
+      colSelectorEl.classList.remove('hidden');
+      colSelectorEl.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200">
+            Välj kolumner att konvertera (${selectedCols.length} av ${totalCols} valda):
+          </span>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.portalConverter.selectAllColumns(true)" class="px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500 hover:text-white text-[11px] font-bold transition">
+              Markera alla
+            </button>
+            <button type="button" onclick="window.portalConverter.selectAllColumns(false)" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-rose-500 hover:text-white text-[11px] font-bold transition">
+              Avmarkera alla
+            </button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          ${Array.from({ length: totalCols }, (_, idx) => {
+            const isChecked = selectedCols.includes(idx);
+            const label = headerSource[idx] ? headerSource[idx] : `Kolumn ${idx + 1}`;
+            const cls = isChecked
+              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40'
+              : 'bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 opacity-75';
+            return `
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition select-none ${cls}">
+                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="window.portalConverter.toggleColumn(${idx})" class="accent-emerald-500 rounded cursor-pointer" />
+                <span class="max-w-[160px] truncate" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      `;
     }
 
+    if (titleEl) {
+      const extra = rows.length > maxPreviewRows ? ` • visar första ${maxPreviewRows} raderna` : '';
+      titleEl.textContent = `${convertState.previewTitle || ''} • ${selectedCols.length} av ${totalCols} kolumner valda${extra}`;
+    }
+
+    if (!selectedCols.length) {
+      bodyEl.innerHTML = `
+        <div class="py-10 px-4 text-center text-xs font-semibold text-amber-400">
+          Inga kolumner är valda. Markera minst en kolumn ovan för att förhandsgranska och exportera.
+        </div>
+      `;
+      return;
+    }
+
+    const slice = rows.slice(0, maxPreviewRows);
     const headerRow = slice[0] || [];
     const dataRows = slice.slice(1);
 
@@ -494,13 +601,23 @@
       <table class="w-full text-left border-collapse text-xs">
         <thead class="sticky top-0 bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-sky-200 font-bold border-b border-slate-300 dark:border-slate-700">
           <tr>
-            ${Array.from({ length: colCount }, (_, idx) => `<th class="py-2.5 px-3 border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(headerRow[idx] || `Kolumn ${idx + 1}`)}</th>`).join('')}
+            ${selectedCols.map(idx => {
+              const label = headerRow[idx] || `Kolumn ${idx + 1}`;
+              return `
+                <th class="py-2.5 px-3 border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                  <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked onchange="window.portalConverter.toggleColumn(${idx})" class="accent-emerald-500 rounded cursor-pointer" />
+                    <span>${escapeHtml(label)}</span>
+                  </label>
+                </th>
+              `;
+            }).join('')}
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200/70 dark:divide-slate-800">
           ${dataRows.map(row => `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-              ${Array.from({ length: colCount }, (_, idx) => `<td class="py-2 px-3 border-r border-slate-200/60 dark:border-slate-800/80 text-slate-700 dark:text-slate-200">${escapeHtml(row[idx] || '')}</td>`).join('')}
+              ${selectedCols.map(idx => `<td class="py-2 px-3 border-r border-slate-200/60 dark:border-slate-800/80 text-slate-700 dark:text-slate-200">${escapeHtml(row[idx] || '')}</td>`).join('')}
             </tr>
           `).join('')}
         </tbody>
@@ -526,8 +643,8 @@
 
     try {
       if (convertState.fileType === 'pdf' && convertState.targetFormat === 'xlsx') {
-        const rows = convertState.previewRows;
-        if (!rows.length) throw new Error('Ingen data att exportera.');
+        const rows = filterRowsBySelectedColumns(convertState.previewRows);
+        if (!rows.length) throw new Error('Ingen data eller inga kolumner valda att exportera.');
         const ws = window.XLSX.utils.aoa_to_sheet(rows);
         const colCount = Math.max(...rows.map(r => r.length));
         ws['!cols'] = Array.from({ length: colCount }, (_, c) => {
@@ -539,6 +656,7 @@
         window.XLSX.writeFile(wb, outName);
       } else if (convertState.fileType === 'pdf' && convertState.targetFormat === 'docx') {
         if (!window.docx) throw new Error('Biblioteket docx kunde inte laddas.');
+        if (!convertState.selectedColIndices.length) throw new Error('Välj minst en kolumn att exportera.');
         const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, ShadingType, TextRun, BorderStyle } = window.docx;
 
         const children = [];
@@ -550,7 +668,7 @@
             }));
           }
 
-          // Gruppera konsekutiva flerkolumnsrader till riktiga Word-tabeller
+          // Gruppera konsekutiva flerkolumnsrader till riktiga Word-tabeller (med valda kolumner)
           let idx = 0;
           while (idx < page.rows.length) {
             const row = page.rows[idx];
@@ -558,11 +676,13 @@
             const looksLikeTable = row.length >= 2 && nonEmptyCount >= 2;
 
             if (looksLikeTable) {
-              const tableRows = [];
+              const rawTableRows = [];
               while (idx < page.rows.length && page.rows[idx].length >= 2 && page.rows[idx].filter(c => c !== '').length >= 2) {
-                tableRows.push(page.rows[idx]);
+                rawTableRows.push(page.rows[idx]);
                 idx++;
               }
+              const tableRows = filterRowsBySelectedColumns(rawTableRows);
+              if (!tableRows.length) continue;
               const maxCols = Math.max(...tableRows.map(r => r.length));
               const wordRows = tableRows.map((r, rIdx) =>
                 new TableRow({
@@ -671,8 +791,8 @@
         doc.save(outName);
       } else if (convertState.fileType === 'excel' && convertState.targetFormat === 'pdf') {
         if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('jsPDF kunde inte laddas.');
-        const rows = convertState.previewRows;
-        if (!rows.length) throw new Error('Kalkylbladet är tomt.');
+        const rows = filterRowsBySelectedColumns(convertState.previewRows);
+        if (!rows.length) throw new Error('Kalkylbladet är tomt eller inga kolumner är valda.');
         const colCount = Math.max(...rows.map(r => r.length));
         const orientation = colCount > 5 ? 'landscape' : 'portrait';
         const { jsPDF } = window.jspdf;
@@ -751,6 +871,8 @@
     init: initConverter,
     setTargetFormat: setConvertTargetFormat,
     setExcelSheet: setConvertExcelSheet,
+    toggleColumn,
+    selectAllColumns,
     exportFile: exportConvertedFile,
     reset: resetConverter
   };
