@@ -3626,6 +3626,9 @@
       let rubrikCol = headers.findIndex(h => h === 'rubrik');
       if (rubrikCol === -1) rubrikCol = headers.findIndex(h => h.includes('rubrik') || h.includes('benamning') || h.includes('artikelbenamning'));
 
+      let artCol = headers.findIndex(h => h === 'artikel' || h === 'artnr' || h === 'art.nr' || h === 'artikelnummer' || h === 'artikelnr' || h === 'art nr');
+      if (artCol === -1) artCol = headers.findIndex(h => (h.includes('artikel') && !h.includes('benamning')) || h.includes('artnr'));
+
       let countCol = headers.findIndex(h => h.includes('antal av rubrik') || h === 'antal');
 
       // Om inga rubriker alls fanns, gissa kolumn utifrån innehåll på första dataraden
@@ -3653,10 +3656,11 @@
 
         const rawDate = row[dateCol];
         const rawRubrik = row[rubrikCol];
+        const rawArt = artCol !== -1 ? cleanCellText(row[artCol]) : '';
         const dateStr = formatExcelDateValue(rawDate) || 'Ej angivet datum';
         const rubrikStr = cleanCellText(rawRubrik);
 
-        if (!rubrikStr) continue;
+        if (!rubrikStr && !rawArt) continue;
         const lowRub = cleanHeaderKey(rubrikStr);
         if (lowRub === 'rubrik' || lowRub === 'totalsumma' || lowRub === 'radetiketter') continue;
 
@@ -3664,7 +3668,8 @@
 
         results.push({
           date: dateStr,
-          rubrik: rubrikStr,
+          rubrik: rubrikStr || rawArt,
+          artnr: rawArt,
           count: rowCount
         });
       }
@@ -3743,22 +3748,22 @@
 
     async function loadSampleRekondActivity() {
       const sampleData = [
-        { date: '2026-10-20', rubrik: 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', count: 5 },
-        { date: '2026-10-20', rubrik: 'Läkemedelsautomat Dosell version 3.0 med administrationstjänst', count: 1 },
-        { date: '2026-10-20', rubrik: 'Mobilt trygghetslarm Pico Pro med halsband', count: 1 },
-        { date: '2026-10-20', rubrik: 'Personvåg trådlös dubbelsidig medicinsk golvvåg, Bluetooth', count: 2 },
-        { date: '2026-10-21', rubrik: 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', count: 10 },
-        { date: '2026-10-21', rubrik: 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm) och nätadapter', count: 2 },
-        { date: '2026-10-21', rubrik: 'Läkemedelsautomat Dosell version 3.0 med administrationstjänst', count: 5 },
-        { date: '2026-10-21', rubrik: 'Läkemedelsautomat Evondos E300 med administrationstjänst', count: 26 },
-        { date: '2026-10-21', rubrik: 'Mobilt trygghetslarm Nano 4G bärbar/förberedd för fästanordning', count: 3 },
-        { date: '2026-10-22', rubrik: 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', count: 18 },
-        { date: '2026-10-22', rubrik: 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm) och nätadapter', count: 2 },
-        { date: '2026-10-22', rubrik: 'Mobilt trygghetslarm Nano 4G bärbar/förberedd för fästanordning', count: 3 },
-        { date: '2026-10-23', rubrik: 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', count: 10 },
-        { date: '2026-10-23', rubrik: 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm) och nätadapter', count: 4 },
-        { date: '2026-10-23', rubrik: 'Digital tillsyn NattUgla Avancerad (kamera samt sensor) inkl fäste, extern antenn', count: 2 },
-        { date: '2026-10-23', rubrik: 'Mobilt trygghetslarm Pico Pro med halsband', count: 1 }
+        { date: '2026-10-20', artnr: '82730', rubrik: 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', count: 5 },
+        { date: '2026-10-20', artnr: '89514', rubrik: 'Läkemedelsautomat Dosell version 3.0 med administrationstjänst', count: 1 },
+        { date: '2026-10-20', artnr: '86390', rubrik: 'Mobilt trygghetslarm Pico Pro med halsband', count: 1 },
+        { date: '2026-10-20', artnr: '82469', rubrik: 'Personvåg trådlös dubbelsidig medicinsk golvvåg, Bluetooth', count: 2 },
+        { date: '2026-10-21', artnr: '82730', rubrik: 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', count: 10 },
+        { date: '2026-10-21', artnr: '81549', rubrik: 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm) och nätadapter', count: 2 },
+        { date: '2026-10-21', artnr: '89514', rubrik: 'Läkemedelsautomat Dosell version 3.0 med administrationstjänst', count: 5 },
+        { date: '2026-10-21', artnr: '83322', rubrik: 'Läkemedelsautomat Evondos E300 med administrationstjänst', count: 26 },
+        { date: '2026-10-21', artnr: '86391', rubrik: 'Mobilt trygghetslarm Nano 4G bärbar/förberedd för fästanordning', count: 3 },
+        { date: '2026-10-22', artnr: '82730', rubrik: 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', count: 18 },
+        { date: '2026-10-22', artnr: '81549', rubrik: 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm) och nätadapter', count: 2 },
+        { date: '2026-10-22', artnr: '86391', rubrik: 'Mobilt trygghetslarm Nano 4G bärbar/förberedd för fästanordning', count: 3 },
+        { date: '2026-10-23', artnr: '82730', rubrik: 'A&D 656 automatisk blodtrycksmätare komplett med manschett S, M+L', count: 10 },
+        { date: '2026-10-23', artnr: '81549', rubrik: 'Blodtrycksmätare Omron M7 Intelli IT-AFIB inklusive manschett (22-42 cm) och nätadapter', count: 4 },
+        { date: '2026-10-23', artnr: '86991', rubrik: 'Digital tillsyn NattUgla Avancerad (kamera samt sensor) inkl fäste, extern antenn', count: 2 },
+        { date: '2026-10-23', artnr: '86390', rubrik: 'Mobilt trygghetslarm Pico Pro med halsband', count: 1 }
       ];
 
       ensureInventoryStruct();
@@ -3919,42 +3924,40 @@
         if (!q) return true;
         const d = (item.date || '').toLowerCase();
         const r = (item.rubrik || '').toLowerCase();
-        const a = (item.artnr || resolveArtnrForRubrik(item.rubrik, item)).toLowerCase();
+        const a = cleanCellText(item.artnr || item.artikel || '').toLowerCase();
         return d.includes(q) || r.includes(q) || a.includes(q);
       });
 
-      // Gruppera per Planerat datum -> Rubrik / Artikel
+      // Gruppera per Planerat datum -> Artnr (unikt ID, aldrig på benämning)
       const grouped = {};
       let grandTotal = 0;
-      const uniqueRubrikerSet = new Set();
+      const uniqueArticlesSet = new Set();
 
       filteredList.forEach(item => {
         const d = item.date || 'Ej angivet datum';
-        const r = item.rubrik || 'Okänd rubrik';
+        const r = cleanCellText(item.rubrik || '') || 'Okänd rubrik';
+        const rawArt = cleanCellText(item.artnr || item.artikel || '');
+        const art = rawArt && rawArt !== '-' && rawArt !== 'Okänd' ? rawArt : '-';
         const c = Number(item.count) || 1;
-        const art = resolveArtnrForRubrik(r, item);
-        if (art && art !== '-') item.artnr = art;
+        const groupKey = art !== '-' ? `ART::${art}` : `RUBRIK::${r}`;
 
         if (!grouped[d]) grouped[d] = { total: 0, items: {} };
         grouped[d].total += c;
 
-        if (!grouped[d].items[r]) {
-          grouped[d].items[r] = { rubrik: r, artnr: art, count: 0 };
+        if (!grouped[d].items[groupKey]) {
+          grouped[d].items[groupKey] = { rubrik: r, artnr: art, count: 0 };
         }
-        grouped[d].items[r].count += c;
-        if (art && art !== '-' && (!grouped[d].items[r].artnr || grouped[d].items[r].artnr === '-')) {
-          grouped[d].items[r].artnr = art;
-        }
+        grouped[d].items[groupKey].count += c;
 
         grandTotal += c;
-        uniqueRubrikerSet.add(r);
+        uniqueArticlesSet.add(groupKey);
       });
 
       const sortedDates = Object.keys(grouped).sort((a, b) => a.localeCompare(b, 'sv'));
 
       document.getElementById('pivot-total-sum').textContent = grandTotal;
       document.getElementById('pivot-total-dates').textContent = sortedDates.length;
-      document.getElementById('pivot-unique-rubriker').textContent = uniqueRubrikerSet.size;
+      document.getElementById('pivot-unique-rubriker').textContent = uniqueArticlesSet.size;
 
       if (!sortedDates.length) {
         tbody.innerHTML = `
@@ -3998,7 +4001,10 @@
 
         // 2. Underrader (artiklar)
         if (!isCollapsed) {
-          const itemEntries = Object.values(group.items).sort((a, b) => a.rubrik.localeCompare(b.rubrik, 'sv'));
+          const itemEntries = Object.values(group.items).sort((a, b) => {
+            const cmp = a.rubrik.localeCompare(b.rubrik, 'sv');
+            return cmp !== 0 ? cmp : (a.artnr || '').localeCompare(b.artnr || '', 'sv');
+          });
           itemEntries.forEach(subItem => {
             const safeRubrik = subItem.rubrik.replace(/'/g, "\\'").replace(/"/g, '&quot;');
             const artnrDisplay = subItem.artnr && subItem.artnr !== '-' ? subItem.artnr : '-';
