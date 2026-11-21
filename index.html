@@ -226,6 +226,10 @@
           <i class="fa-solid fa-arrows-rotate text-indigo-400"></i>
           <span>Konvertera</span>
         </button>
+        <button type="button" onclick="switchTab('clipboard')" id="tab-clipboard" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 shrink-0">
+          <i class="fa-solid fa-clipboard-list text-sky-400"></i>
+          <span>Urklipp</span>
+        </button>
         <button type="button" onclick="switchTab('game')" id="tab-game" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 shrink-0">
           <i class="fa-solid fa-gamepad text-purple-400"></i>
           <span>Spel</span>
@@ -1108,6 +1112,11 @@
 
         <div id="convert-preview-body" class="overflow-x-auto overflow-y-auto custom-scrollbar rounded-2xl border border-slate-200 dark:border-slate-700 max-h-[460px]"></div>
       </div>
+    </section>
+
+    <!-- ==================== VY: URKLIPP (EMOJI OCH MER) ==================== -->
+    <section id="view-clipboard" class="hidden space-y-4">
+      <div id="clipboard-app-root"></div>
     </section>
 
     <!-- ==================== VY: SPEL (KEMI-LABBET VÄTSKE-PUZZLE) ==================== -->
@@ -2723,6 +2732,7 @@
       ],
       guides: [],
       notes: [],
+      clipboardItems: [],
       inventory: {
         systemItems: [],
         scannedLogs: [],
@@ -2874,7 +2884,7 @@
         document.body.classList.remove('portal-game-active');
       }
 
-      ['links', 'guides', 'notes', 'inventory', 'rekondCount', 'licensslut', 'convert', 'game'].forEach(t => {
+      ['links', 'guides', 'notes', 'inventory', 'rekondCount', 'licensslut', 'convert', 'clipboard', 'game'].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const btn = document.getElementById(`tab-${t}`);
         if (!view || !btn) return;
@@ -2889,6 +2899,9 @@
             renderLicensslut();
           } else if (t === 'convert') {
             window.portalConverter?.init();
+          } else if (t === 'clipboard') {
+            window.portalClipboard?.init();
+            window.portalClipboard?.render();
           } else if (t === 'game') {
             window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
             document.documentElement.scrollTop = 0;
@@ -2985,6 +2998,7 @@
             links: applyLinksOrder(Array.isArray(data.links) ? data.links : defaultState.links),
             guides: Array.isArray(data.guides) ? data.guides : [],
             notes: Array.isArray(data.notes) ? data.notes : [],
+            clipboardItems: Array.isArray(data.clipboardItems) ? data.clipboardItems : (window.portalClipboard?.loadStoredItems?.() || []),
             inventory: data.inventory && typeof data.inventory === 'object' ? {
               systemItems: Array.isArray(data.inventory.systemItems) ? data.inventory.systemItems : [],
               scannedLogs: Array.isArray(data.inventory.scannedLogs) ? data.inventory.scannedLogs : [],
@@ -2998,6 +3012,9 @@
               batteryMultiplier: Number(data.inventory.batteryMultiplier) || 4
             } : JSON.parse(JSON.stringify(defaultState.inventory))
           };
+          if (state.clipboardItems.length && window.portalClipboard) {
+            window.portalClipboard.setItems(state.clipboardItems, false);
+          }
           return;
         }
       } catch (e) {}
@@ -3011,8 +3028,12 @@
             links: applyLinksOrder(parsed.links || defaultState.links),
             guides: parsed.guides || [],
             notes: parsed.notes || [],
+            clipboardItems: Array.isArray(parsed.clipboardItems) ? parsed.clipboardItems : (window.portalClipboard?.loadStoredItems?.() || []),
             inventory: parsed.inventory || JSON.parse(JSON.stringify(defaultState.inventory))
           };
+          if (state.clipboardItems.length && window.portalClipboard) {
+            window.portalClipboard.setItems(state.clipboardItems, false);
+          }
         } catch (e) {}
       }
     }
@@ -3279,6 +3300,11 @@
       await syncFromSupabase(false);
     }
 
+    window.syncClipboardToMainState = async function(items) {
+      state.clipboardItems = Array.isArray(items) ? items : [];
+      await saveState();
+    };
+
     function renderAll() {
       renderCategoryPills();
       renderLinks();
@@ -3287,6 +3313,7 @@
       renderInventory();
       renderRekondCountPivot();
       renderLicensslut();
+      window.portalClipboard?.render();
     }
 
     // ==================== SUPABASE CRUD & STORAGE HJÄLPARE ====================
@@ -3543,6 +3570,7 @@
 
     // ==================== BACKUP EXPORT / IMPORT ====================
     function exportBackupJSON() {
+      state.clipboardItems = window.portalClipboard ? window.portalClipboard.getItems() : (state.clipboardItems || []);
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -3564,6 +3592,10 @@
           if (imported.links) state.links = imported.links;
           if (imported.guides) state.guides = imported.guides;
           if (imported.notes) state.notes = imported.notes;
+          if (Array.isArray(imported.clipboardItems)) {
+            state.clipboardItems = imported.clipboardItems;
+            window.portalClipboard?.setItems(imported.clipboardItems, false);
+          }
           if (imported.inventory) state.inventory = imported.inventory;
           await saveState();
           renderAll();
@@ -8887,6 +8919,9 @@
 
   <!-- ==================== KONVERTERINGSSKRIPT ==================== -->
   <script src="convert/converter.js"></script>
+
+  <!-- ==================== URKLIPP & EMOJI OCH MER ==================== -->
+  <script src="clipboard/clipboard.js"></script>
 
   <!-- ==================== SPEL SKRIPT (KEMI-LABBET VÄTSKE-PUZZLE) ==================== -->
   <script src="game/audio.js"></script>
