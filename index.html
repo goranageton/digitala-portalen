@@ -2733,6 +2733,7 @@
       guides: [],
       notes: [],
       clipboardItems: [],
+      clipboardGifHistory: [],
       inventory: {
         systemItems: [],
         scannedLogs: [],
@@ -2999,6 +3000,7 @@
             guides: Array.isArray(data.guides) ? data.guides : [],
             notes: Array.isArray(data.notes) ? data.notes : [],
             clipboardItems: Array.isArray(data.clipboardItems) ? data.clipboardItems : (window.portalClipboard?.loadStoredItems?.() || []),
+            clipboardGifHistory: Array.isArray(data.clipboardGifHistory) ? data.clipboardGifHistory : (window.portalClipboard?.loadStoredGifHistory?.() || []),
             inventory: data.inventory && typeof data.inventory === 'object' ? {
               systemItems: Array.isArray(data.inventory.systemItems) ? data.inventory.systemItems : [],
               scannedLogs: Array.isArray(data.inventory.scannedLogs) ? data.inventory.scannedLogs : [],
@@ -3015,6 +3017,9 @@
           if (state.clipboardItems.length && window.portalClipboard) {
             window.portalClipboard.setItems(state.clipboardItems, false);
           }
+          if (state.clipboardGifHistory.length && window.portalClipboard) {
+            window.portalClipboard.setGifHistory(state.clipboardGifHistory, false);
+          }
           return;
         }
       } catch (e) {}
@@ -3029,10 +3034,14 @@
             guides: parsed.guides || [],
             notes: parsed.notes || [],
             clipboardItems: Array.isArray(parsed.clipboardItems) ? parsed.clipboardItems : (window.portalClipboard?.loadStoredItems?.() || []),
+            clipboardGifHistory: Array.isArray(parsed.clipboardGifHistory) ? parsed.clipboardGifHistory : (window.portalClipboard?.loadStoredGifHistory?.() || []),
             inventory: parsed.inventory || JSON.parse(JSON.stringify(defaultState.inventory))
           };
           if (state.clipboardItems.length && window.portalClipboard) {
             window.portalClipboard.setItems(state.clipboardItems, false);
+          }
+          if (state.clipboardGifHistory.length && window.portalClipboard) {
+            window.portalClipboard.setGifHistory(state.clipboardGifHistory, false);
           }
         } catch (e) {}
       }
@@ -3305,6 +3314,11 @@
       await saveState();
     };
 
+    window.syncClipboardGifHistoryToMainState = async function(items) {
+      state.clipboardGifHistory = Array.isArray(items) ? items : [];
+      await saveState();
+    };
+
     function renderAll() {
       renderCategoryPills();
       renderLinks();
@@ -3571,6 +3585,7 @@
     // ==================== BACKUP EXPORT / IMPORT ====================
     function exportBackupJSON() {
       state.clipboardItems = window.portalClipboard ? window.portalClipboard.getItems() : (state.clipboardItems || []);
+      state.clipboardGifHistory = window.portalClipboard ? window.portalClipboard.getGifHistory() : (state.clipboardGifHistory || []);
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -3595,6 +3610,10 @@
           if (Array.isArray(imported.clipboardItems)) {
             state.clipboardItems = imported.clipboardItems;
             window.portalClipboard?.setItems(imported.clipboardItems, false);
+          }
+          if (Array.isArray(imported.clipboardGifHistory)) {
+            state.clipboardGifHistory = imported.clipboardGifHistory;
+            window.portalClipboard?.setGifHistory(imported.clipboardGifHistory, false);
           }
           if (imported.inventory) state.inventory = imported.inventory;
           await saveState();

@@ -2,6 +2,19 @@
 (() => {
   const STORAGE_KEY = 'dh_clipboard_items';
   const MAX_UNPINNED = 25;
+  const GIF_HISTORY_STORAGE_KEY = 'dh_clipboard_gif_history';
+  const MAX_GIF_HISTORY = 25;
+  const GIPHY_API_KEY_STORAGE = 'dh_giphy_api_key';
+  const DEFAULT_GIPHY_API_KEY = '6Jx1ChkHwqL7plsyGI70LqXVIVpsUz0k';
+
+  const GIPHY_QUICK_CATEGORIES = [
+    { label: 'Tack', query: 'tack thank you' },
+    { label: 'Tummen upp', query: 'thumbs up' },
+    { label: 'Grattis', query: 'grattis congrats' },
+    { label: 'Skratt', query: 'laughing haha' },
+    { label: 'Kaffe', query: 'coffee' },
+    { label: 'Fira', query: 'celebration party' }
+  ];
 
   const EMOJI_ITEMS = [
     // Smileys
@@ -268,10 +281,20 @@
 
   const clipState = {
     initialized: false,
+    gifHistoryInitialized: false,
     activeSubTab: 'clipboard', // 'clipboard' | 'emoji' | 'gif' | 'kaomoji' | 'symbols'
     searchQuery: '',
     subCategory: 'Alla',
     items: [],
+    gifHistory: [],
+    gifMode: 'trending', // 'trending' | 'history' | 'search'
+    gifCategoryLabel: '',
+    gifResults: [],
+    gifLoading: false,
+    gifError: '',
+    gifFallbackActive: false,
+    gifSearchTimer: null,
+    gifRequestSeq: 0,
     openMenuId: null,
     copyStatusText: '',
     copyStatusTimer: null,
@@ -355,6 +378,106 @@
       } catch (e) {}
     }
     return normalized;
+  }
+
+  function getGiphyApiKey() {
+    try {
+      const stored = localStorage.getItem(GIPHY_API_KEY_STORAGE);
+      if (stored && stored.trim()) return stored.trim();
+      localStorage.setItem(GIPHY_API_KEY_STORAGE, DEFAULT_GIPHY_API_KEY);
+    } catch (e) {}
+    return DEFAULT_GIPHY_API_KEY;
+  }
+
+  function normalizeGifHistory(rawList) {
+    if (!Array.isArray(rawList)) return [];
+    const seen = new Set();
+    const cleaned = [];
+    for (const raw of rawList) {
+      if (!raw || typeof raw !== 'object') continue;
+      const url = String(raw.url || '').trim();
+      const previewUrl = String(raw.previewUrl || url).trim();
+      if (!url || !previewUrl) continue;
+      const id = String(raw.id || url).trim();
+      if (seen.has(id) || seen.has(url)) continue;
+      seen.add(id);
+      seen.add(url);
+      cleaned.push({
+        id,
+        title: String(raw.title || 'GIF').trim() || 'GIF',
+        previewUrl,
+        url,
+        createdAt: Number(raw.createdAt) || Date.now()
+      });
+      if (cleaned.length >= MAX_GIF_HISTORY) break;
+    }
+    return cleaned;
+  }
+
+  function loadStoredGifHistory() {
+    try {
+      const raw = localStorage.getItem(GIF_HISTORY_STORAGE_KEY);
+      if (!raw) return [];
+      return normalizeGifHistory(JSON.parse(raw));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function persistGifHistory(list, syncMainState = true) {
+    const normalized = normalizeGifHistory(list);
+    clipState.gifHistoryInitialized = true;
+    clipState.gifHistory = normalized;
+    try {
+      localStorage.setItem(GIF_HISTORY_STORAGE_KEY, JSON.stringify(normalized));
+    } catch (e) {}
+    if (syncMainState && typeof window.syncClipboardGifHistoryToMainState === 'function') {
+      try {
+        window.syncClipboardGifHistoryToMainState(normalized);
+      } catch (e) {}
+    }
+    return normalized;
+  }
+
+  function recordGifHistory(gifObj) {
+    if (!gifObj || !gifObj.url) return;
+    if (!clipState.gifHistoryInitialized) {
+      clipState.gifHistory = loadStoredGifHistory();
+      clipState.gifHistoryInitialized = true;
+    }
+    const entry = {
+      id: String(gifObj.id || gifObj.url),
+      title: String(gifObj.title || 'GIF').trim() || 'GIF',
+      previewUrl: String(gifObj.previewUrl || gifObj.url),
+      url: String(gifObj.url),
+      createdAt: Date.now()
+    };
+    const filtered = clipState.gifHistory.filter(
+      g => g.id !== entry.id && g.url !== entry.url
+    );
+    persistGifHistory([entry, ...filtered], true);
+  }
+
+  function clearGifHistory() {
+    if (!clipState.gifHistory.length) return;
+    persistGifHistory([], true);
+    render();
+    if (typeof window.showToast === 'function') {
+      window.showToast('GIF-historik rensad.');
+    }
+  }
+
+  function getGifHistory() {
+    if (!clipState.gifHistoryInitialized) {
+      clipState.gifHistory = loadStoredGifHistory();
+      clipState.gifHistoryInitialized = true;
+    }
+    return clipState.gifHistory.map(g => ({ ...g }));
+  }
+
+  function setGifHistory(list, syncMainState = true) {
+    persistGifHistory(list, syncMainState);
+    render();
   }
 
   function showCopiedFeedback(label, triggerEl = null) {
@@ -566,12 +689,164 @@
     }
   }
 
+  async function fetchGiphyGifs(mode, query = '') {
+    const reqId = ++clipState.gifRequestSeq;
+    clipState.gifLoading = true;
+    clipState.gifError = '';
+    clipState.gifFallbackActive = false;
+    updateGifResultsSection();
+
+    try {
+      if (typeof fetch !== 'function') {
+        throw new Error('fetch unavailable');
+      }
+      const apiKey = getGiphyApiKey();
+      const q = String(query || '').trim();
+      const endpoint = mode === 'search' && q
+        ? `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(q)}&limit=24&rating=g&lang=sv`
+        : `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(apiKey)}&limit=24&rating=g`;
+
+      const res = await fetch(endpoint);
+      if (!res || !res.ok) {
+        throw new Error(`HTTP ${res ? res.status : 'error'}`);
+      }
+      const json = await res.json();
+      if (reqId !== clipState.gifRequestSeq) return;
+
+      const mapped = (Array.isArray(json?.data) ? json.data : [])
+        .map(g => {
+          const previewUrl =
+            g?.images?.fixed_width?.url ||
+            g?.images?.fixed_width_small?.url ||
+            g?.images?.downsized?.url ||
+            g?.images?.original?.url ||
+            '';
+          const url =
+            g?.images?.original?.url ||
+            g?.images?.downsized?.url ||
+            g?.images?.fixed_width?.url ||
+            g?.url ||
+            '';
+          return {
+            id: String(g?.id || url),
+            title: String(g?.title || 'GIF').trim() || 'GIF',
+            previewUrl,
+            url,
+            width: Number(g?.images?.fixed_width?.width) || 200,
+            height: Number(g?.images?.fixed_width?.height) || 150
+          };
+        })
+        .filter(g => g.previewUrl && g.url);
+
+      clipState.gifResults = mapped;
+      clipState.gifLoading = false;
+      clipState.gifFallbackActive = false;
+      clipState.gifError = '';
+    } catch (err) {
+      if (reqId !== clipState.gifRequestSeq) return;
+      clipState.gifResults = [];
+      clipState.gifLoading = false;
+      clipState.gifFallbackActive = true;
+      clipState.gifError = 'Kunde inte nå GIPHY just nu – visar lokala exempel-GIF:ar.';
+    }
+
+    updateGifResultsSection();
+  }
+
+  function setGifMode(mode) {
+    clipState.gifMode = mode;
+    clipState.gifCategoryLabel = '';
+    if (mode !== 'search') {
+      clipState.searchQuery = '';
+    }
+    render();
+    if (mode === 'trending') {
+      fetchGiphyGifs('trending');
+    }
+  }
+
+  function selectGifCategory(index) {
+    const cat = GIPHY_QUICK_CATEGORIES[Number(index)];
+    if (!cat) return;
+    clipState.gifMode = 'search';
+    clipState.gifCategoryLabel = cat.label;
+    clipState.searchQuery = cat.label;
+    render();
+    fetchGiphyGifs('search', cat.query);
+  }
+
+  function handleGifSearchInput(val) {
+    const q = String(val ?? '');
+    clipState.searchQuery = q;
+    clipState.gifCategoryLabel = '';
+    if (clipState.gifSearchTimer) clearTimeout(clipState.gifSearchTimer);
+
+    const clearBtn = document.getElementById('clipboard-gif-clear-btn');
+    if (clearBtn) {
+      if (q.trim()) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
+    }
+
+    if (!q.trim()) {
+      clipState.gifMode = 'trending';
+      clipState.gifSearchTimer = setTimeout(() => {
+        fetchGiphyGifs('trending');
+      }, 250);
+      return;
+    }
+
+    clipState.gifMode = 'search';
+    clipState.gifSearchTimer = setTimeout(() => {
+      fetchGiphyGifs('search', q.trim());
+    }, 350);
+  }
+
+  function submitGifSearch() {
+    if (clipState.gifSearchTimer) clearTimeout(clipState.gifSearchTimer);
+    const q = clipState.searchQuery.trim();
+    clipState.gifCategoryLabel = '';
+    if (!q) {
+      setGifMode('trending');
+      return;
+    }
+    clipState.gifMode = 'search';
+    fetchGiphyGifs('search', q);
+  }
+
+  function retryGiphy() {
+    if (clipState.gifMode === 'search' && clipState.searchQuery.trim()) {
+      const cat = GIPHY_QUICK_CATEGORIES.find(c => c.label === clipState.gifCategoryLabel);
+      fetchGiphyGifs('search', cat ? cat.query : clipState.searchQuery.trim());
+    } else {
+      clipState.gifMode = 'trending';
+      fetchGiphyGifs('trending');
+    }
+  }
+
+  function selectGiphyGif(source, index, triggerEl) {
+    const list = source === 'history' ? clipState.gifHistory : clipState.gifResults;
+    const gif = list[Number(index)];
+    if (!gif || !gif.url) return;
+    copyText(gif.url, triggerEl, 'Kopierat!');
+    recordGifHistory(gif);
+    if (clipState.gifMode === 'history') {
+      updateGifResultsSection();
+    }
+  }
+
   function setSubTab(tab) {
     clipState.activeSubTab = tab;
     clipState.searchQuery = '';
     clipState.subCategory = 'Alla';
     clipState.openMenuId = null;
+    if (tab === 'gif') {
+      clipState.gifMode = 'trending';
+      clipState.gifCategoryLabel = '';
+    }
     render();
+    if (tab === 'gif' && !clipState.gifResults.length && !clipState.gifLoading) {
+      fetchGiphyGifs('trending');
+    }
   }
 
   function setSearch(val) {
@@ -943,28 +1218,109 @@
   }
 
   function renderGifSubTab() {
+    const isHistory = clipState.gifMode === 'history';
+    const isTrending = clipState.gifMode === 'trending';
+
     return `
       <div class="space-y-3.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h3 class="text-base font-extrabold text-slate-900 dark:text-white">GIF-reaktioner</h3>
-          <span class="text-[11px] text-slate-400 font-semibold">Lokala animerade reaktionskort – klicka för att kopiera</span>
+        <!-- Windows 11 GIPHY-topprad: Tillbaka, Historik, Trend & Snabbkategorier -->
+        <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 border-b border-slate-200 dark:border-slate-700/70">
+          <button
+            type="button"
+            onclick="window.portalClipboard.setSubTab('clipboard')"
+            title="Tillbaka till Urklipp"
+            class="w-9 h-9 rounded-xl text-slate-500 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 flex items-center justify-center shrink-0 transition"
+          >
+            <i class="fa-solid fa-arrow-left text-sm"></i>
+          </button>
+
+          <button
+            type="button"
+            onclick="window.portalClipboard.setGifMode('history')"
+            title="Senast använda GIF:ar"
+            class="relative w-10 h-9 rounded-xl flex items-center justify-center shrink-0 transition ${isHistory ? 'bg-slate-200/70 dark:bg-slate-700/70 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'}"
+          >
+            <i class="fa-regular fa-clock text-sm"></i>
+            ${isHistory ? '<span class="absolute bottom-0.5 w-4 h-0.5 rounded-full bg-sky-400"></span>' : ''}
+          </button>
+
+          <button
+            type="button"
+            onclick="window.portalClipboard.setGifMode('trending')"
+            title="Trend"
+            class="relative w-10 h-9 rounded-xl flex items-center justify-center shrink-0 transition ${isTrending ? 'bg-slate-200/70 dark:bg-slate-700/70 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'}"
+          >
+            <i class="fa-solid fa-arrow-trend-up text-sm"></i>
+            ${isTrending ? '<span class="absolute bottom-0.5 w-4 h-0.5 rounded-full bg-sky-400"></span>' : ''}
+          </button>
+
+          <div class="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-1 shrink-0"></div>
+
+          ${GIPHY_QUICK_CATEGORIES.map((cat, idx) => {
+            const active = clipState.gifMode === 'search' && clipState.gifCategoryLabel === cat.label;
+            const cls = active
+              ? 'bg-slate-200/70 dark:bg-slate-700/70 text-slate-900 dark:text-white font-extrabold'
+              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/50 font-semibold';
+            return `
+              <button
+                type="button"
+                onclick="window.portalClipboard.selectGifCategory(${idx})"
+                class="relative px-3 h-9 rounded-xl text-xs whitespace-nowrap flex items-center shrink-0 transition ${cls}"
+              >
+                <span>${escapeHtml(cat.label)}</span>
+                ${active ? '<span class="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-sky-400"></span>' : ''}
+              </button>
+            `;
+          }).join('')}
         </div>
-        ${renderSearchBar('Sök GIF-reaktion (t.ex. tack, klar, kaffe, fest)...')}
-        <div id="clipboard-dynamic-content">
+
+        <!-- Sökruta (GIPHY) -->
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input
+            id="clipboard-gif-search-input"
+            type="text"
+            value="${escapeHtml(clipState.searchQuery)}"
+            oninput="window.portalClipboard.handleGifSearchInput(this.value)"
+            onkeydown="if (event.key === 'Enter') { event.preventDefault(); window.portalClipboard.submitGifSearch(); }"
+            placeholder="Sök GIPHY GIF-bilder"
+            class="w-full pl-9 pr-9 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+          />
+          <button
+            id="clipboard-gif-clear-btn"
+            type="button"
+            onclick="window.portalClipboard.setGifMode('trending')"
+            title="Rensa sökning"
+            class="${clipState.searchQuery.trim() ? '' : 'hidden'} absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center text-xs transition"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div id="clipboard-gif-results" class="space-y-3">
           ${renderGifGrid()}
         </div>
       </div>
     `;
   }
 
-  function renderGifGrid() {
+  function updateGifResultsSection() {
+    const el = document.getElementById('clipboard-gif-results');
+    if (el) {
+      el.innerHTML = renderGifGrid();
+    } else if (clipState.activeSubTab === 'gif') {
+      render();
+    }
+  }
+
+  function renderGifFallbackGrid() {
     const q = clipState.searchQuery.trim().toLowerCase();
     const filtered = GIF_ITEMS
       .map((item, idx) => ({ ...item, idx }))
       .filter(it => !q || it.title.toLowerCase().includes(q) || it.badge.toLowerCase().includes(q) || it.copyValue.toLowerCase().includes(q));
 
     if (!filtered.length) {
-      return '<div class="py-10 text-center text-xs text-slate-400">Inga GIF-reaktioner matchade sökningen.</div>';
+      return '<div class="py-10 text-center text-xs text-slate-400">Inga lokala GIF-reaktioner matchade sökningen.</div>';
     }
 
     return `
@@ -994,6 +1350,112 @@
               <div class="text-[11px] text-slate-300/90 truncate mt-0.5">${escapeHtml(it.copyValue)}</div>
             </div>
           </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderGifGrid() {
+    const isHistory = clipState.gifMode === 'history';
+    const heading = isHistory
+      ? 'Senast använda'
+      : (clipState.gifMode === 'search' && (clipState.gifCategoryLabel || clipState.searchQuery.trim()))
+        ? (clipState.gifCategoryLabel || clipState.searchQuery.trim())
+        : 'Trend';
+
+    const headerHtml = `
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">${escapeHtml(heading)}</h3>
+          <div class="text-[11px] font-semibold text-sky-400">Drivs av GIPHY</div>
+        </div>
+        ${isHistory && clipState.gifHistory.length ? `
+          <button
+            type="button"
+            onclick="window.portalClipboard.clearGifHistory()"
+            class="px-2.5 py-1 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/25 hover:bg-rose-600 hover:text-white text-[11px] font-bold transition"
+          >
+            Rensa historik
+          </button>
+        ` : ''}
+      </div>
+    `;
+
+    if (isHistory) {
+      if (!clipState.gifHistory.length) {
+        return `
+          ${headerHtml}
+          <div class="py-12 px-4 text-center rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-dashed border-slate-300 dark:border-slate-700 space-y-1.5">
+            <div class="text-sm font-extrabold text-slate-800 dark:text-white">Ingen GIF-historik ännu</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Klicka på en GIF under Trend eller Sök så sparas den här och kopieras till urklipp.</p>
+          </div>
+        `;
+      }
+
+      return `
+        ${headerHtml}
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          ${clipState.gifHistory.map((g, idx) => `
+            <button
+              type="button"
+              onclick="window.portalClipboard.selectGiphyGif('history', ${idx}, this)"
+              title="${escapeHtml(g.title)}"
+              class="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-900 hover:border-sky-400 hover:ring-2 hover:ring-sky-400/40 transition cursor-pointer text-left"
+            >
+              <img src="${escapeHtml(g.previewUrl)}" alt="${escapeHtml(g.title)}" loading="lazy" class="w-full h-32 sm:h-36 object-cover" />
+              <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition">
+                <div class="text-[11px] font-bold text-white truncate">${escapeHtml(g.title)}</div>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    if (clipState.gifLoading) {
+      return `
+        ${headerHtml}
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          ${Array.from({ length: 6 }, () => '<div class="h-32 sm:h-36 rounded-xl bg-slate-200 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/70 animate-pulse"></div>').join('')}
+        </div>
+      `;
+    }
+
+    if (clipState.gifFallbackActive) {
+      return `
+        ${headerHtml}
+        <div class="px-3.5 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-300 font-semibold">
+          <span><i class="fa-solid fa-triangle-exclamation mr-1.5"></i>${escapeHtml(clipState.gifError || 'Kunde inte nå GIPHY – visar lokala exempel-GIF:ar.')}</span>
+          <button type="button" onclick="window.portalClipboard.retryGiphy()" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500 hover:text-slate-950 text-[11px] font-extrabold transition">
+            Försök igen
+          </button>
+        </div>
+        ${renderGifFallbackGrid()}
+      `;
+    }
+
+    if (!clipState.gifResults.length) {
+      return `
+        ${headerHtml}
+        <div class="py-10 text-center text-xs text-slate-400">Inga GIF-bilder hittades.</div>
+      `;
+    }
+
+    return `
+      ${headerHtml}
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        ${clipState.gifResults.map((g, idx) => `
+          <button
+            type="button"
+            onclick="window.portalClipboard.selectGiphyGif('results', ${idx}, this)"
+            title="${escapeHtml(g.title)}"
+            class="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-900 hover:border-sky-400 hover:ring-2 hover:ring-sky-400/40 transition cursor-pointer text-left"
+          >
+            <img src="${escapeHtml(g.previewUrl)}" alt="${escapeHtml(g.title)}" loading="lazy" class="w-full h-32 sm:h-36 object-cover" />
+            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition">
+              <div class="text-[11px] font-bold text-white truncate">${escapeHtml(g.title)}</div>
+            </div>
+          </button>
         `).join('')}
       </div>
     `;
@@ -1106,7 +1568,7 @@
     } else if (clipState.activeSubTab === 'emoji') {
       container.innerHTML = renderEmojiGrid();
     } else if (clipState.activeSubTab === 'gif') {
-      container.innerHTML = renderGifGrid();
+      updateGifResultsSection();
     } else if (clipState.activeSubTab === 'kaomoji') {
       container.innerHTML = renderKaomojiGrid();
     } else if (clipState.activeSubTab === 'symbols') {
@@ -1138,6 +1600,11 @@
       clipState.items = loadStoredItems();
       clipState.initialized = true;
     }
+    if (!clipState.gifHistoryInitialized) {
+      clipState.gifHistory = loadStoredGifHistory();
+      clipState.gifHistoryInitialized = true;
+    }
+    getGiphyApiKey();
 
     if (!clipState.docListenerBound && typeof document !== 'undefined' && document.addEventListener) {
       clipState.docListenerBound = true;
@@ -1158,6 +1625,16 @@
     getItems,
     setItems,
     loadStoredItems,
+    getGifHistory,
+    setGifHistory,
+    loadStoredGifHistory,
+    clearGifHistory,
+    setGifMode,
+    selectGifCategory,
+    handleGifSearchInput,
+    submitGifSearch,
+    selectGiphyGif,
+    retryGiphy,
     addItem,
     addFromInput,
     pasteFromSystemClipboard,
